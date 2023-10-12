@@ -1,0 +1,31 @@
+overlay: 1.0.0
+x-top-level-extension: true
+info:
+  x-info-extension: 42
+  title: Drinks Overlay
+  version: 1.2.3
+extends: https://raw.githubusercontent.com/speakeasy-sdks/template-sdk/main/openapi.yaml
+actions:
+  - x-action-extension: foo
+    target: $.paths["/drink/{name}"].get
+    description: Test update
+    update:
+      parameters:
+        - x-parameter-extension: foo
+          name: test
+          description: Test parameter
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          x-response-extension: foo
+          description: Test response
+          content:
+            application/json:
+              schema:
+                type: string
+  - x-action-extension: bar
+    target: $.paths["/drinks"].get
+    description: Test remove
+    remove: true
