@@ -44,7 +44,7 @@ func Compare(r1, r2 io.Reader) (*Overlay, error) {
 	t2 := fileName(r2, "second YAML file")
 	y2, err := loadSpec(r2)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read %s: %w", err)
+		return nil, fmt.Errorf("failed to read %s: %w", t2, err)
 	}
 
 	actions, err := walkTreesAndCollectActions(simplePath{}, y1, y2)

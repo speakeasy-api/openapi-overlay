@@ -27,7 +27,7 @@ var expectOverlay = &overlay.Overlay{
 			Extensions: map[string]any{
 				"x-action-extension": "foo",
 			},
-			Target:      `$.paths["/drinks/{name}"].get`,
+			Target:      `$.paths["/drink/{name}"].get`,
 			Description: "Test update",
 			Update: map[string]any{
 				"parameters": []any{
