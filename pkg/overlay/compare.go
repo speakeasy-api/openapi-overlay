@@ -120,7 +120,7 @@ func (p simplePath) ToJSONPath() string {
 	out := &strings.Builder{}
 	out.WriteString("$")
 	for _, part := range p {
-		fmt.Fprintf(out, ".%v", part)
+		out.WriteString(part.String())
 	}
 	return out.String()
 }
