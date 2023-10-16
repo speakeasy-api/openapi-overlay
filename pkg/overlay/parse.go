@@ -12,3 +12,10 @@ func Parse(r io.Reader) (*Overlay, error) {
 	err := dec.Decode(&overlay)
 	return &overlay, err
 }
+
+// Format writes the file back out as YAML.
+func (o *Overlay) Format(w io.Writer) error {
+	enc := yaml.NewEncoder(w)
+	enc.SetIndent(2)
+	return enc.Encode(o)
+}

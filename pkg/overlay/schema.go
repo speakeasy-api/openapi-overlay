@@ -16,7 +16,7 @@ type Overlay struct {
 	Info Info `yaml:"info"`
 
 	// Extends is a URL to the OpenAPI specification this overlay applies to.
-	Extends string `yaml:"extends"`
+	Extends string `yaml:"extends,omitempty"`
 
 	// Actions is the list of actions to perform to apply the overlay.
 	Actions []Action `yaml:"actions"`
@@ -40,12 +40,12 @@ type Action struct {
 	Target string `yaml:"target"`
 
 	// Description is a description of the action.
-	Description string `yaml:"description"'`
+	Description string `yaml:"description,omitempty"`
 
 	// Update is the sub-document to use to merge or replace in the target. This is
 	// ignored if Remove is set.
-	Update any `yaml:"update"`
+	Update any `yaml:"update,omitempty"`
 
 	// Remove marks the target node for removal rather than update.
-	Remove bool `yaml:"remove"`
+	Remove bool `yaml:"remove,omitempty"`
 }

@@ -22,3 +22,20 @@ func convertToNode(data any) (*yaml.Node, error) {
 
 	return dataNode, nil
 }
+
+// convertFromNode will convert a yaml.Node into an any.
+func convertFromNode(n *yaml.Node) (any, error) {
+	var data any
+
+	dataYaml, err := yaml.Marshal(n)
+	if err != nil {
+		return nil, err
+	}
+
+	err = yaml.Unmarshal(dataYaml, &data)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}

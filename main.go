@@ -19,10 +19,18 @@ var (
 		Args:  cobra.ExactArgs(1),
 		Run:   RunValidateOverlay,
 	}
+
+	compareCmd = &cobra.Command{
+		Use:   "compare <spec1> <spec2>",
+		Short: "Given two specs, it will output an overlay that describes the differences between them",
+		Args:  cobra.ExactArgs(2),
+		Run:   RunCompare,
+	}
 )
 
 func init() {
 	rootCmd.AddCommand(validateCmd)
+	rootCmd.AddCommand(compareCmd)
 }
 
 func main() {
@@ -52,4 +60,26 @@ func RunValidateOverlay(cmd *cobra.Command, args []string) {
 	}
 
 	fmt.Printf("Overlay file %q is valid.\n", args[0])
+}
+
+func RunCompare(cmd *cobra.Command, args []string) {
+	r1, err := os.Open(args[0])
+	if err != nil {
+		Dief("Failed to open spec file %q: %v", args[0], err)
+	}
+
+	r2, err := os.Open(args[1])
+	if err != nil {
+		Dief("Failed to open spec file %q: %v", args[1], err)
+	}
+
+	o, err := overlay.Compare(r1, r2)
+	if err != nil {
+		Dief("Failed to compare spec files %q and %q: %v", args[0], args[1], err)
+	}
+
+	err = o.Format(os.Stdout)
+	if err != nil {
+		Dief("Failed to format overlay: %v", err)
+	}
 }
