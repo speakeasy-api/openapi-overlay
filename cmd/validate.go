@@ -2,9 +2,8 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/speakeasy-api/openapi-specedit/pkg/overlay"
+	"github.com/speakeasy-api/openapi-specedit/pkg/loader"
 	"github.com/spf13/cobra"
-	"os"
 )
 
 var (
@@ -17,14 +16,9 @@ var (
 )
 
 func RunValidateOverlay(cmd *cobra.Command, args []string) {
-	r, err := os.Open(args[0])
+	o, err := loader.LoadOverlay(args[0])
 	if err != nil {
-		Dief("Failed to open overlay file %q: %v", args[0], err)
-	}
-
-	o, err := overlay.Parse(r)
-	if err != nil {
-		Dief("Failed to parse overlay file %q: %v", args[0], err)
+		Die(err)
 	}
 
 	err = o.Validate()

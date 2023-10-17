@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"fmt"
+	"github.com/speakeasy-api/openapi-specedit/pkg/loader"
 	"github.com/speakeasy-api/openapi-specedit/pkg/overlay"
 	"github.com/spf13/cobra"
 	"os"
@@ -16,17 +18,19 @@ var (
 )
 
 func RunCompare(cmd *cobra.Command, args []string) {
-	r1, err := os.Open(args[0])
+	y1, err := loader.LoadSpecification(args[0])
 	if err != nil {
-		Dief("Failed to open spec file %q: %v", args[0], err)
+		Dief("Failed to load %q: %v", args[0], err)
 	}
 
-	r2, err := os.Open(args[1])
+	y2, err := loader.LoadSpecification(args[1])
 	if err != nil {
-		Dief("Failed to open spec file %q: %v", args[1], err)
+		Dief("Failed to laod %q: %v", args[1], err)
 	}
 
-	o, err := overlay.Compare(r1, r2)
+	title := fmt.Sprintf("Overlay %s => %s", args[0], args[1])
+
+	o, err := overlay.Compare(title, args[0], y1, y2)
 	if err != nil {
 		Dief("Failed to compare spec files %q and %q: %v", args[0], args[1], err)
 	}

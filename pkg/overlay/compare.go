@@ -3,60 +3,21 @@ package overlay
 import (
 	"fmt"
 	"gopkg.in/yaml.v3"
-	"io"
 	"log"
 	"path/filepath"
 	"strings"
 )
 
-type namedReader interface {
-	Name() string
-}
-
-func fileName(r io.Reader, fallback string) string {
-	if n, isNamed := r.(namedReader); isNamed {
-		return n.Name()
-	}
-	return fallback
-}
-
-func loadSpec(r io.Reader) (*yaml.Node, error) {
-	c, err := io.ReadAll(r)
-	if err != nil {
-		return nil, err
-	}
-
-	var y yaml.Node
-	err = yaml.Unmarshal(c, &y)
-	return &y, err
-}
-
 // Compare compares input specifications from two files and returns an overlay
 // that will convert the first into the second.
-func Compare(r1, r2 io.Reader) (*Overlay, error) {
-	t1 := fileName(r1, "first YAML file")
-	hasExtends := t1 != "first YAML file"
-	y1, err := loadSpec(r1)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read %s: %w", t1, err)
-	}
-
-	t2 := fileName(r2, "second YAML file")
-	y2, err := loadSpec(r2)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read %s: %w", t2, err)
-	}
-
+func Compare(title, extends string, y1, y2 *yaml.Node) (*Overlay, error) {
 	actions, err := walkTreesAndCollectActions(simplePath{}, y1, y2)
 	if err != nil {
 		return nil, err
 	}
 
-	title := fmt.Sprintf("Overlay %s => %s", t1, t2)
-
-	extends := ""
-	if hasExtends {
-		abs, err := filepath.Abs(t1)
+	if extends != "" {
+		abs, err := filepath.Abs(extends)
 		if err == nil {
 			extends = "file://" + abs
 		}
