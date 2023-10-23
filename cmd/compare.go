@@ -25,7 +25,7 @@ func RunCompare(cmd *cobra.Command, args []string) {
 
 	y2, err := loader.LoadSpecification(args[1])
 	if err != nil {
-		Dief("Failed to laod %q: %v", args[1], err)
+		Dief("Failed to load %q: %v", args[1], err)
 	}
 
 	title := fmt.Sprintf("Overlay %s => %s", args[0], args[1])
