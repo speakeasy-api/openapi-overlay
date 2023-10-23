@@ -3,7 +3,7 @@
 This is an implementation of the [OpenAPI Overlay
 Specification](https://github.com/OAI/Overlay-Specification/blob/3f398c6/versions/1.0.0.md)
 (2023-10-12). This specification defines a means of editing a OpenAPI
-Specificaiton file by applying a list of actions. Each action is either a remove
+Specification file by applying a list of actions. Each action is either a remove
 action that prunes nodes or an update that merges a value into nodes. The nodes
 impacted are selected by a target expression which uses JSONPath.
 
