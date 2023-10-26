@@ -97,26 +97,28 @@ func applyUpdateAction(root *yaml.Node, action Action) error {
 	return nil
 }
 
-func updateNode(node *yaml.Node, merge any) error {
-	mergeNode, err := convertToNode(merge)
+func updateNode(node *yaml.Node, update any) error {
+	updateNode, err := convertToNode(update)
 	if err != nil {
 		return err
 	}
 
-	switch mergeNode.Kind {
+	mergeNode(node, updateNode)
+	return nil
+}
+
+func mergeNode(node, merge *yaml.Node) {
+	switch merge.Kind {
 	case yaml.ScalarNode:
-		node.Value = mergeNode.Value
+		node.Value = merge.Value
 	case yaml.MappingNode:
 		if node.Kind != yaml.MappingNode {
-			node.Value = mergeNode.Value
+			node.Value = merge.Value
 		}
-		mergeMappingNode(node, mergeNode)
+		mergeMappingNode(node, merge)
 	case yaml.SequenceNode:
-		// TODO should sequence nodes be merged too?
-		node.Value = mergeNode.Value
+		mergeSequenceNode(node, merge)
 	}
-
-	return nil
 }
 
 // mergeMappingNode will perform a shallow merge of the merge node into the main
@@ -130,11 +132,16 @@ NextKey:
 		for j := 0; j < len(node.Content); j += 2 {
 			nodeKey := node.Content[j].Value
 			if nodeKey == mergeKey {
-				node.Content[j+1] = mergeValue
+				mergeNode(node.Content[j+1], mergeValue)
 				continue NextKey
 			}
 		}
 
 		node.Content = append(node.Content, merge.Content[i], mergeValue)
 	}
+}
+
+// mergeSequenceNode will append the merge node's content to the original node.
+func mergeSequenceNode(node, merge *yaml.Node) {
+	node.Content = append(node.Content, merge.Content...)
 }

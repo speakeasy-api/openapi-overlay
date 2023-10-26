@@ -96,6 +96,11 @@ paths:
       tags:
         - drinks
       parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
         - description: Test parameter
           in: query
           name: test
@@ -104,12 +109,17 @@ paths:
           x-parameter-extension: foo
       responses:
         "200":
+          description: Test response
           content:
             application/json:
               schema:
+                $ref: "#/components/schemas/Drink"
                 type: string
-          description: Test response
           x-response-extension: foo
+        "5XX":
+          $ref: "#/components/responses/APIError"
+        default:
+          $ref: "#/components/responses/UnknownError"
   /ingredients:
     get:
       operationId: listIngredients
