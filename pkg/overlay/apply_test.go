@@ -1,7 +1,8 @@
 package overlay_test
 
 import (
-	"github.com/speakeasy-api/openapi-specedit/pkg/overlay"
+	"bytes"
+	"github.com/speakeasy-api/openapi-specedit/pkg/loader"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
@@ -9,37 +10,42 @@ import (
 	"testing"
 )
 
+// NodeMatchesFile is a test that marshals the YAML file from the given node,
+// then compares those bytes to those found in the expected file.
+func NodeMatchesFile(
+	t *testing.T,
+	actual *yaml.Node,
+	expectedFile string,
+	msgAndArgs ...any,
+) {
+	variadoc := func(pre ...any) []any { return append(msgAndArgs, pre...) }
+
+	var actualBuf bytes.Buffer
+	enc := yaml.NewEncoder(&actualBuf)
+	enc.SetIndent(2)
+	err := enc.Encode(actual)
+	require.NoError(t, err, variadoc("failed to marshal node: ")...)
+
+	expectedBytes, err := os.ReadFile(expectedFile)
+	require.NoError(t, err, variadoc("failed to read expected file: ")...)
+
+	//t.Log("### EXPECT START ###\n" + string(expectedBytes) + "\n### EXPECT END ###\n")
+	//t.Log("### ACTUAL START ###\n" + actualBuf.String() + "\n### ACTUAL END ###\n")
+
+	assert.Equal(t, string(expectedBytes), actualBuf.String(), variadoc("node does not match expected file: ")...)
+}
+
 func TestApplyTo(t *testing.T) {
-	openApi, err := os.Open("testdata/openapi.yaml")
-	require.NoError(t, err)
-	defer openApi.Close()
+	t.Parallel()
 
-	var node yaml.Node
-	err = yaml.NewDecoder(openApi).Decode(&node)
+	node, err := loader.LoadSpecification("testdata/openapi.yaml")
 	require.NoError(t, err)
 
-	oasOverlay, err := os.Open("testdata/overlay.yaml")
-	require.NoError(t, err)
-	defer oasOverlay.Close()
-
-	o, err := overlay.Parse(oasOverlay)
+	o, err := loader.LoadOverlay("testdata/overlay.yaml")
 	require.NoError(t, err)
 
-	err = o.ApplyTo(&node)
+	err = o.ApplyTo(node)
 	assert.NoError(t, err)
 
-	actualBytes, err := yaml.Marshal(&node)
-	require.NoError(t, err)
-
-	var actual any
-	err = yaml.Unmarshal(actualBytes, &actual)
-	require.NoError(t, err)
-
-	expectedIn, err := os.ReadFile("testdata/openapi-overlayed.yaml")
-	require.NoError(t, err)
-
-	var expected any
-	err = yaml.Unmarshal(expectedIn, &expected)
-
-	assert.Equal(t, expected, actual)
+	NodeMatchesFile(t, node, "testdata/openapi-overlayed.yaml")
 }

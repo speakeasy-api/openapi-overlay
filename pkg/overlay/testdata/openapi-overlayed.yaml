@@ -48,9 +48,7 @@ tags:
   - name: authentication
     description: The authentication endpoints.
   - name: config
-
 paths:
-
   x-speakeasy-errors:
     statusCodes: # Defines status codes to handle as errors for all operations
       - 4XX # Wildcard to handle all status codes in the 400-499 range
@@ -89,10 +87,8 @@ paths:
           $ref: "#/components/responses/APIError"
         default:
           $ref: "#/components/responses/UnknownError"
-
   /drinks: {}
-
-  "/drink/{name}":
+  /drink/{name}: #TODO: this should be by product code and we should have search by name
     get:
       operationId: getDrink
       summary: Get a drink.
@@ -100,21 +96,20 @@ paths:
       tags:
         - drinks
       parameters:
-        - x-parameter-extension: foo
-          name: test
-          description: Test parameter
+        - description: Test parameter
           in: query
+          name: test
           schema:
             type: string
+          x-parameter-extension: foo
       responses:
         "200":
-          x-response-extension: foo
-          description: Test response
           content:
             application/json:
               schema:
                 type: string
-
+          description: Test response
+          x-response-extension: foo
   /ingredients:
     get:
       operationId: listIngredients
@@ -146,7 +141,6 @@ paths:
           $ref: "#/components/responses/APIError"
         default:
           $ref: "#/components/responses/UnknownError"
-
   /order:
     post:
       operationId: createOrder

@@ -56,8 +56,15 @@ func removeNode(idx parentIndex, node *yaml.Node) {
 
 	for i, child := range parent.Content {
 		if child == node {
-			parent.Content = append(parent.Content[:i], parent.Content[i+1:]...)
-			return
+			switch parent.Kind {
+			case yaml.MappingNode:
+				// we have to delete the key too
+				parent.Content = append(parent.Content[:i-1], parent.Content[i+1:]...)
+				return
+			case yaml.SequenceNode:
+				parent.Content = append(parent.Content[:i], parent.Content[i+1:]...)
+				return
+			}
 		}
 	}
 }
