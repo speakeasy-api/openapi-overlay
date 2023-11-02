@@ -1,3 +1,5 @@
 openapi-specedit
 *.bak
 *.swp
+*.iml
+.DS_Store
