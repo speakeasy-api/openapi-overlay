@@ -3,10 +3,7 @@ package overlay_test
 import (
 	"github.com/speakeasy-api/openapi-specedit/pkg/overlay"
 	"github.com/stretchr/testify/assert"
-	"os"
 	"testing"
-
-	"github.com/stretchr/testify/require"
 )
 
 var expectOverlay = &overlay.Overlay{
@@ -64,14 +61,19 @@ var expectOverlay = &overlay.Overlay{
 			Description: "Test remove",
 			Remove:      true,
 		},
+		{
+			Target: "$",
+			Update: map[string]any{
+				"info": map[string]any{
+					"description": "A merged description",
+				},
+			},
+		},
 	},
 }
 
 func TestParse(t *testing.T) {
-	f, err := os.Open("testdata/overlay.yaml")
-	require.NoError(t, err)
-
-	o, err := overlay.Parse(f)
+	o, err := overlay.Parse("testdata/overlay.yaml")
 	assert.NoError(t, err)
 	assert.NotNil(t, o)
 

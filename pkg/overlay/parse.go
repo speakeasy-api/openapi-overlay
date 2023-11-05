@@ -1,15 +1,66 @@
 package overlay
 
 import (
+	"fmt"
+	"github.com/pb33f/libopenapi/index"
+	"github.com/pb33f/libopenapi/resolver"
 	"gopkg.in/yaml.v3"
 	"io"
+	"os"
+	"path/filepath"
 )
 
 // Parse will parse the given reader as an overlay file.
-func Parse(r io.Reader) (*Overlay, error) {
+func Parse(path string) (*Overlay, error) {
+	cw, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+
+	filePath := filepath.Join(cw, path)
+
+	ro, err := os.Open(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open overlay file at path %q: %w", path, err)
+	}
+
 	var overlay Overlay
-	dec := yaml.NewDecoder(r)
-	err := dec.Decode(&overlay)
+	dec := yaml.NewDecoder(ro)
+	var rootNode yaml.Node
+
+	err = dec.Decode(&rootNode)
+	if err != nil {
+		return nil, err
+	}
+
+	cfg := index.CreateOpenAPIIndexConfig()
+	cfg.BasePath = filepath.Dir(filePath)
+	idx := index.NewSpecIndexWithConfig(&rootNode, cfg)
+	referenceErrors := idx.GetReferenceIndexErrors()
+	if len(referenceErrors) > 0 {
+		msg := ""
+		for _, err := range referenceErrors {
+			msg += err.Error() + ";"
+		}
+		return nil, fmt.Errorf("error indexing spec: %s", msg)
+	}
+
+	resolverRef := resolver.NewResolver(idx)
+	resolvingErrors := resolverRef.Resolve()
+	// any errors found during resolution? Print them out.
+	if len(resolvingErrors) > 0 {
+		msg := ""
+		for _, err := range resolvingErrors {
+			msg += err.Error() + ";"
+		}
+		return nil, fmt.Errorf("error resolving spec: %s", msg)
+	}
+
+	err = idx.GetRootNode().Decode(&overlay)
+	if err != nil {
+		return nil, err
+	}
+
 	return &overlay, err
 }
 

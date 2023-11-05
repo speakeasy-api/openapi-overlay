@@ -29,3 +29,6 @@ actions:
     target: $.paths["/drinks"].get
     description: Test remove
     remove: true
+  - target: $
+    update:
+      "$ref": "./toMerge.yaml"
