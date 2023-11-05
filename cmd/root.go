@@ -4,7 +4,7 @@ import "github.com/spf13/cobra"
 
 var (
 	rootCmd = &cobra.Command{
-		Use:   "openapi-specedit",
+		Use:   "openapi-overlay",
 		Short: "Work with OpenAPI Overlays",
 	}
 )

@@ -1,4 +1,4 @@
-# OpenAPI SpecEdit
+# OpenAPI Overlay
 
 This is an implementation of the [OpenAPI Overlay
 Specification](https://github.com/OAI/Overlay-Specification/blob/3f398c6/versions/1.0.0.md)
@@ -25,7 +25,7 @@ so it should be able to parse either YAML or JSON with the same parser.
 Install it with the `go install` command:
 
 ```sh
-go install github.com/speakeasy-api/openapi-specedit@latest
+go install github.com/speakeasy-api/openapi-overlay@latest
 ```
 
 # Usage
@@ -37,7 +37,7 @@ The tool provides the following sub-commands for working with overlay files:
 The most obvious use-case for this command is applying an overlay to a specification file.
 
 ```sh
-openapi-specedit apply overlay.yaml spec.yaml
+openapi-overlay apply overlay.yaml spec.yaml
 ```
 
 If the overlay file has the `extends` key set to a `file://` URL, then the `spec.yaml` file may be omitted.
@@ -47,7 +47,7 @@ If the overlay file has the `extends` key set to a `file://` URL, then the `spec
 A command is provided to perform basic validation of the overlay file itself. It will not tell you whether it will apply correctly or whether the application will generate a valid OpenAPI specification. Rather, it is limited to just telling you when the spec follows the OpenAPI Overlay Specification correctly: all required fields are present and have valid values.
 
 ```sh
-openapi-specedit validate overlay.yaml
+openapi-overlay validate overlay.yaml
 ```
 
 ## Compare
@@ -55,7 +55,7 @@ openapi-specedit validate overlay.yaml
 Finally, a tool is provided that will generate an OpenAPI Overlay specification from two input files.
 
 ```sh
-openapi-specedit compare spec1.yaml spec2.yaml
+openapi-overlay compare spec1.yaml spec2.yaml
 ```
 
 The overlay file will be written to stdout.
