@@ -12,12 +12,10 @@ import (
 
 // Parse will parse the given reader as an overlay file.
 func Parse(path string) (*Overlay, error) {
-	cw, err := os.Getwd()
+	filePath, err := filepath.Abs(path)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get absolute path for %q: %w", path, err)
 	}
-
-	filePath := filepath.Join(cw, path)
 
 	ro, err := os.Open(filePath)
 	if err != nil {
