@@ -2,7 +2,7 @@ package overlay_test
 
 import (
 	"bytes"
-	"github.com/speakeasy-api/openapi-specedit/pkg/loader"
+	"github.com/speakeasy-api/openapi-overlay/pkg/loader"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"

@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/speakeasy-api/openapi-specedit/pkg/loader"
-	"github.com/speakeasy-api/openapi-specedit/pkg/overlay"
+	"github.com/speakeasy-api/openapi-overlay/pkg/loader"
+	"github.com/speakeasy-api/openapi-overlay/pkg/overlay"
 	"github.com/spf13/cobra"
 	"os"
 )

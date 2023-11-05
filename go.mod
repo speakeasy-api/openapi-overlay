@@ -1,4 +1,4 @@
-module github.com/speakeasy-api/openapi-specedit
+module github.com/speakeasy-api/openapi-overlay
 
 go 1.21.0
 

@@ -2,7 +2,7 @@ package loader
 
 import (
 	"fmt"
-	"github.com/speakeasy-api/openapi-specedit/pkg/overlay"
+	"github.com/speakeasy-api/openapi-overlay/pkg/overlay"
 	"gopkg.in/yaml.v3"
 	"net/url"
 	"os"

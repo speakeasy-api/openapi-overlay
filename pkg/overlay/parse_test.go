@@ -1,7 +1,7 @@
 package overlay_test
 
 import (
-	"github.com/speakeasy-api/openapi-specedit/pkg/overlay"
+	"github.com/speakeasy-api/openapi-overlay/pkg/overlay"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
