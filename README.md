@@ -1,5 +1,7 @@
 # OpenAPI Overlay
 
+> ⚠️ This an alpha implementation. If you'd like to discuss a production use case please join the Speakeasy [slack](https://join.slack.com/t/speakeasy-dev/shared_invite/zt-1df0lalk5-HCAlpcQiqPw8vGukQWhexw).
+
 This is an implementation of the [OpenAPI Overlay
 Specification](https://github.com/OAI/Overlay-Specification/blob/3f398c6/versions/1.0.0.md)
 (2023-10-12). This specification defines a means of editing a OpenAPI
