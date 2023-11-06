@@ -2,8 +2,8 @@ package overlay
 
 import (
 	"fmt"
-	"github.com/pb33f/libopenapi/index"
-	"github.com/pb33f/libopenapi/resolver"
+	"github.com/speakeasy-api/libopenapi/index"
+	"github.com/speakeasy-api/libopenapi/resolver"
 	"gopkg.in/yaml.v3"
 	"io"
 	"os"
