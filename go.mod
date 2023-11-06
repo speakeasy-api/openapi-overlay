@@ -3,7 +3,6 @@ module github.com/speakeasy-api/openapi-overlay
 go 1.21.0
 
 require (
-	github.com/pb33f/libopenapi v0.12.1
 	github.com/spf13/cobra v1.7.0
 	github.com/stretchr/testify v1.8.2
 	github.com/vmware-labs/yaml-jsonpath v0.3.2
@@ -15,6 +14,7 @@ require (
 	github.com/dprotaso/go-yit v0.0.0-20220510233725-9ba8df137936 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/onsi/gomega v1.27.6 // indirect
+	github.com/pb33f/libopenapi v0.13.6 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	golang.org/x/exp v0.0.0-20230811145659-89c5cff77bcb // indirect

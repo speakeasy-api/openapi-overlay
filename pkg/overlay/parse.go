@@ -3,7 +3,6 @@ package overlay
 import (
 	"fmt"
 	"github.com/pb33f/libopenapi/index"
-	"github.com/pb33f/libopenapi/resolver"
 	"gopkg.in/yaml.v3"
 	"io"
 	"os"
@@ -43,7 +42,7 @@ func Parse(path string) (*Overlay, error) {
 		return nil, fmt.Errorf("error indexing spec: %s", msg)
 	}
 
-	resolverRef := resolver.NewResolver(idx)
+	resolverRef := idx.GetResolver()
 	resolvingErrors := resolverRef.Resolve()
 	// any errors found during resolution? Print them out.
 	if len(resolvingErrors) > 0 {
