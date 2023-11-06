@@ -32,7 +32,7 @@ go install github.com/speakeasy-api/openapi-overlay@latest
 
 # Usage
 
-The tool provides the following sub-commands for working with overlay files:
+The tool provides the following sub-commands for working with overlay files. It can also be accessed through Speakeasy CLI command `speakeasy overlay`. Please see [here] for CLI installation and usage documentation. 
 
 ## Apply
 
