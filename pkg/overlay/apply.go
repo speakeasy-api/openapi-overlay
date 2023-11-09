@@ -108,7 +108,7 @@ func updateNode(node *yaml.Node, update any) error {
 }
 
 func mergeNode(node, merge *yaml.Node) {
-	switch merge.Kind {
+	switch node.Kind {
 	case yaml.ScalarNode:
 		node.Value = merge.Value
 	case yaml.MappingNode:

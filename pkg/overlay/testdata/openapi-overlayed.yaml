@@ -48,6 +48,8 @@ tags:
   - name: authentication
     description: The authentication endpoints.
   - name: config
+  - name: Testing
+    description: just a description
 paths:
   x-speakeasy-errors:
     statusCodes: # Defines status codes to handle as errors for all operations
