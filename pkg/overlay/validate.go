@@ -51,7 +51,7 @@ func (o *Overlay) Validate() error {
 				errs = append(errs, fmt.Errorf("overlay action at index %d target must be defined", i))
 			}
 
-			if action.Remove && action.Update != nil {
+			if action.Remove && !action.Update.IsZero() {
 				errs = append(errs, fmt.Errorf("overlay action at index %d should not both set remove and define update", i))
 			}
 		}

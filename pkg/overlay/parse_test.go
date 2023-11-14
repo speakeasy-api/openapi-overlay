@@ -3,6 +3,8 @@ package overlay_test
 import (
 	"github.com/speakeasy-api/openapi-overlay/pkg/overlay"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"os"
 	"testing"
 )
 
@@ -26,32 +28,6 @@ var expectOverlay = &overlay.Overlay{
 			},
 			Target:      `$.paths["/drink/{name}"].get`,
 			Description: "Test update",
-			Update: map[string]any{
-				"parameters": []any{
-					map[string]any{
-						"x-parameter-extension": "foo",
-						"name":                  "test",
-						"description":           "Test parameter",
-						"in":                    "query",
-						"schema": map[string]any{
-							"type": "string",
-						},
-					},
-				},
-				"responses": map[string]any{
-					"200": map[string]any{
-						"x-response-extension": "foo",
-						"description":          "Test response",
-						"content": map[string]any{
-							"application/json": map[string]any{
-								"schema": map[string]any{
-									"type": "string",
-								},
-							},
-						},
-					},
-				},
-			},
 		},
 		{
 			Extensions: map[string]any{
@@ -62,20 +38,25 @@ var expectOverlay = &overlay.Overlay{
 			Remove:      true,
 		},
 		{
-			Target: "$",
-			Update: map[string]any{
-				"info": map[string]any{
-					"description": "A merged description",
-				},
-			},
+			Target: "$.paths[\"/drinks\"]",
+		},
+		{
+			Target: "$.tags",
 		},
 	},
 }
 
 func TestParse(t *testing.T) {
+	err := overlay.Format("testdata/overlay.yaml")
+	require.NoError(t, err)
 	o, err := overlay.Parse("testdata/overlay.yaml")
 	assert.NoError(t, err)
 	assert.NotNil(t, o)
+	expect, err := os.ReadFile("testdata/overlay.yaml")
+	assert.NoError(t, err)
 
-	assert.Equal(t, expectOverlay, o)
+	actual, err := o.ToString()
+	assert.NoError(t, err)
+	assert.Equal(t, string(expect), actual)
+
 }

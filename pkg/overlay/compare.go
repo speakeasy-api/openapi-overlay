@@ -1,6 +1,7 @@
 package overlay
 
 import (
+	"bytes"
 	"fmt"
 	"gopkg.in/yaml.v3"
 	"log"
@@ -10,7 +11,7 @@ import (
 
 // Compare compares input specifications from two files and returns an overlay
 // that will convert the first into the second.
-func Compare(title, extends string, y1, y2 *yaml.Node) (*Overlay, error) {
+func Compare(title, extends string, y1 *yaml.Node, y2 yaml.Node) (*Overlay, error) {
 	actions, err := walkTreesAndCollectActions(simplePath{}, y1, y2)
 	if err != nil {
 		return nil, err
@@ -94,69 +95,66 @@ func (p simplePath) Base() simplePart {
 	return p[len(p)-1]
 }
 
-func walkTreesAndCollectActions(path simplePath, y1, y2 *yaml.Node) ([]Action, error) {
+func walkTreesAndCollectActions(path simplePath, y1 *yaml.Node, y2 yaml.Node) ([]Action, error) {
 	if y1 == nil {
-		update, err := convertFromNode(y2)
-		if err != nil {
-			return nil, err
-		}
-
 		return []Action{{
 			Target: path.Dir().ToJSONPath(),
-			Update: map[string]any{
-				path.Base().KeyString(): update,
-			},
+			Update: y2,
 		}}, nil
 	}
 
-	if y2 == nil {
+	if y2.IsZero() {
 		return []Action{{
 			Target: path.ToJSONPath(),
 			Remove: true,
 		}}, nil
 	}
+	if y1.Kind != y2.Kind {
+		return []Action{{
+			Target: path.ToJSONPath(),
+			Remove: true,
+		}, {
+			Target: path.ToJSONPath(),
+			Update: y2,
+		}}, nil
+	}
 
 	switch y1.Kind {
 	case yaml.DocumentNode:
-		return walkTreesAndCollectActions(path, y1.Content[0], y2.Content[0])
+		return walkTreesAndCollectActions(path, y1.Content[0], *y2.Content[0])
 	case yaml.SequenceNode:
-		if y2.Kind == yaml.SequenceNode && len(y2.Content) == len(y1.Content) {
+		if len(y2.Content) == len(y1.Content) {
 			return walkSequenceNode(path, y1, y2)
 		}
 
-		update, err := convertFromNode(y2)
-		if err != nil {
-			return nil, err
-		}
-
-		return []Action{{
-			Target: path.ToJSONPath(),
-			Update: update,
-		}}, nil
-	case yaml.MappingNode:
-		if y2.Kind == yaml.MappingNode {
-			return walkMappingNode(path, y1, y2)
-		}
-
-		update, err := convertFromNode(y2)
-		if err != nil {
-			return nil, err
-		}
-
-		return []Action{{
-			Target: path.ToJSONPath(),
-			Update: update,
-		}}, nil
-	case yaml.ScalarNode:
-		if y1.Value != y2.Value {
-			update, err := convertFromNode(y2)
-			if err != nil {
-				return nil, err
-			}
-
+		if len(y2.Content) == len(y1.Content)+1 &&
+			yamlEquals(y2.Content[:len(y1.Content)], y1.Content) {
 			return []Action{{
 				Target: path.ToJSONPath(),
-				Update: update,
+				Update: yaml.Node{
+					Kind:    y1.Kind,
+					Content: []*yaml.Node{y2.Content[len(y1.Content)]},
+				},
+			}}, nil
+		}
+
+		return []Action{{
+			Target: path.ToJSONPath(),
+			Remove: true,
+		}, {
+			Target: path.ToJSONPath(),
+			Update: yaml.Node{
+				Kind:    y1.Kind,
+				Content: y2.Content,
+			},
+		}}, nil
+	case yaml.MappingNode:
+		return walkMappingNode(path, y1, y2)
+	case yaml.ScalarNode:
+		if y1.Value != y2.Value {
+			return []Action{{
+				Target: path.ToJSONPath(),
+				Update: y2,
 			}}, nil
 		}
 	case yaml.AliasNode:
@@ -165,7 +163,29 @@ func walkTreesAndCollectActions(path simplePath, y1, y2 *yaml.Node) ([]Action, e
 	return nil, nil
 }
 
-func walkSequenceNode(path simplePath, y1, y2 *yaml.Node) ([]Action, error) {
+func yamlEquals(nodes []*yaml.Node, content []*yaml.Node) bool {
+	for i := range nodes {
+		bufA := &bytes.Buffer{}
+		bufB := &bytes.Buffer{}
+		decodeA := yaml.NewEncoder(bufA)
+		decodeB := yaml.NewEncoder(bufB)
+		err := decodeA.Encode(nodes[i])
+		if err != nil {
+			return false
+		}
+		err = decodeB.Encode(content[i])
+		if err != nil {
+			return false
+		}
+
+		if bufA.String() != bufB.String() {
+			return false
+		}
+	}
+	return true
+}
+
+func walkSequenceNode(path simplePath, y1 *yaml.Node, y2 yaml.Node) ([]Action, error) {
 	nodeLen := max(len(y1.Content), len(y2.Content))
 	var actions []Action
 	for i := 0; i < nodeLen; i++ {
@@ -179,7 +199,7 @@ func walkSequenceNode(path simplePath, y1, y2 *yaml.Node) ([]Action, error) {
 
 		newActions, err := walkTreesAndCollectActions(
 			path.WithIndex(i),
-			c1, c2)
+			c1, *c2)
 		if err != nil {
 			return nil, err
 		}
@@ -190,7 +210,7 @@ func walkSequenceNode(path simplePath, y1, y2 *yaml.Node) ([]Action, error) {
 	return actions, nil
 }
 
-func walkMappingNode(path simplePath, y1, y2 *yaml.Node) ([]Action, error) {
+func walkMappingNode(path simplePath, y1 *yaml.Node, y2 yaml.Node) ([]Action, error) {
 	var actions []Action
 	foundKeys := map[string]struct{}{}
 
@@ -210,7 +230,7 @@ Outer:
 			if k1.Value == k2.Value {
 				newActions, err := walkTreesAndCollectActions(
 					path.WithKey(k2.Value),
-					v1, v2)
+					v1, *v2)
 				if err != nil {
 					return nil, err
 				}
@@ -222,7 +242,10 @@ Outer:
 		// key not found in y1, so add it
 		newActions, err := walkTreesAndCollectActions(
 			path.WithKey(k2.Value),
-			nil, v2)
+			nil, yaml.Node{
+				Kind:    y1.Kind,
+				Content: []*yaml.Node{k2, v2},
+			})
 		if err != nil {
 			return nil, err
 		}

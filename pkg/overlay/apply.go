@@ -74,7 +74,7 @@ func applyUpdateAction(root *yaml.Node, action Action) error {
 		return nil
 	}
 
-	if action.Update == nil {
+	if action.Update.IsZero() {
 		return nil
 	}
 
@@ -97,24 +97,20 @@ func applyUpdateAction(root *yaml.Node, action Action) error {
 	return nil
 }
 
-func updateNode(node *yaml.Node, update any) error {
-	updateNode, err := convertToNode(update)
-	if err != nil {
-		return err
-	}
-
+func updateNode(node *yaml.Node, updateNode yaml.Node) error {
 	mergeNode(node, updateNode)
 	return nil
 }
 
-func mergeNode(node, merge *yaml.Node) {
-	switch merge.Kind {
-	case yaml.ScalarNode:
+func mergeNode(node *yaml.Node, merge yaml.Node) {
+	if node.Kind != merge.Kind {
+		node.Value = merge.Value
+		return
+	}
+	switch node.Kind {
+	default:
 		node.Value = merge.Value
 	case yaml.MappingNode:
-		if node.Kind != yaml.MappingNode {
-			node.Value = merge.Value
-		}
 		mergeMappingNode(node, merge)
 	case yaml.SequenceNode:
 		mergeSequenceNode(node, merge)
@@ -123,7 +119,7 @@ func mergeNode(node, merge *yaml.Node) {
 
 // mergeMappingNode will perform a shallow merge of the merge node into the main
 // node.
-func mergeMappingNode(node *yaml.Node, merge *yaml.Node) {
+func mergeMappingNode(node *yaml.Node, merge yaml.Node) {
 NextKey:
 	for i := 0; i < len(merge.Content); i += 2 {
 		mergeKey := merge.Content[i].Value
@@ -132,7 +128,7 @@ NextKey:
 		for j := 0; j < len(node.Content); j += 2 {
 			nodeKey := node.Content[j].Value
 			if nodeKey == mergeKey {
-				mergeNode(node.Content[j+1], mergeValue)
+				mergeNode(node.Content[j+1], *mergeValue)
 				continue NextKey
 			}
 		}
@@ -142,6 +138,6 @@ NextKey:
 }
 
 // mergeSequenceNode will append the merge node's content to the original node.
-func mergeSequenceNode(node, merge *yaml.Node) {
+func mergeSequenceNode(node *yaml.Node, merge yaml.Node) {
 	node.Content = append(node.Content, merge.Content...)
 }

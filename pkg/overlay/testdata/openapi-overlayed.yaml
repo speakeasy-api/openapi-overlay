@@ -3,7 +3,7 @@ info:
   title: The Speakeasy Bar
   version: 1.0.0
   summary: A bar that serves drinks.
-  description: A merged description
+  description: A secret underground bar that serves drinks to those in the know.
   contact:
     name: Speakeasy Support
     url: https://support.speakeasy.bar
@@ -48,6 +48,8 @@ tags:
   - name: authentication
     description: The authentication endpoints.
   - name: config
+  - name: Testing
+    description: just a description
 paths:
   x-speakeasy-errors:
     statusCodes: # Defines status codes to handle as errors for all operations
@@ -87,7 +89,9 @@ paths:
           $ref: "#/components/responses/APIError"
         default:
           $ref: "#/components/responses/UnknownError"
-  /drinks: {}
+  /drinks:
+    x-speakeasy-note:
+      "$ref": "./removeNote.yaml"
   /drink/{name}: #TODO: this should be by product code and we should have search by name
     get:
       operationId: getDrink
@@ -101,12 +105,12 @@ paths:
           required: true
           schema:
             type: string
-        - description: Test parameter
-          in: query
+        - x-parameter-extension: foo
           name: test
+          description: Test parameter
+          in: query
           schema:
             type: string
-          x-parameter-extension: foo
       responses:
         "200":
           description: Test response

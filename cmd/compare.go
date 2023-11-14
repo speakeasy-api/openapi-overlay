@@ -30,7 +30,7 @@ func RunCompare(cmd *cobra.Command, args []string) {
 
 	title := fmt.Sprintf("Overlay %s => %s", args[0], args[1])
 
-	o, err := overlay.Compare(title, args[0], y1, y2)
+	o, err := overlay.Compare(title, args[0], y1, *y2)
 	if err != nil {
 		Dief("Failed to compare spec files %q and %q: %v", args[0], args[1], err)
 	}

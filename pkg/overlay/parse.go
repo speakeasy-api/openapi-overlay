@@ -2,8 +2,6 @@ package overlay
 
 import (
 	"fmt"
-	"github.com/speakeasy-api/libopenapi/index"
-	"github.com/speakeasy-api/libopenapi/resolver"
 	"gopkg.in/yaml.v3"
 	"io"
 	"os"
@@ -21,45 +19,35 @@ func Parse(path string) (*Overlay, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to open overlay file at path %q: %w", path, err)
 	}
+	defer ro.Close()
 
 	var overlay Overlay
 	dec := yaml.NewDecoder(ro)
-	var rootNode yaml.Node
 
-	err = dec.Decode(&rootNode)
-	if err != nil {
-		return nil, err
-	}
-
-	cfg := index.CreateOpenAPIIndexConfig()
-	cfg.BasePath = filepath.Dir(filePath)
-	idx := index.NewSpecIndexWithConfig(&rootNode, cfg)
-	referenceErrors := idx.GetReferenceIndexErrors()
-	if len(referenceErrors) > 0 {
-		msg := ""
-		for _, err := range referenceErrors {
-			msg += err.Error() + ";"
-		}
-		return nil, fmt.Errorf("error indexing spec: %s", msg)
-	}
-
-	resolverRef := resolver.NewResolver(idx)
-	resolvingErrors := resolverRef.Resolve()
-	// any errors found during resolution? Print them out.
-	if len(resolvingErrors) > 0 {
-		msg := ""
-		for _, err := range resolvingErrors {
-			msg += err.Error() + ";"
-		}
-		return nil, fmt.Errorf("error resolving spec: %s", msg)
-	}
-
-	err = idx.GetRootNode().Decode(&overlay)
+	err = dec.Decode(&overlay)
 	if err != nil {
 		return nil, err
 	}
 
 	return &overlay, err
+}
+
+// Format will validate reformat the given file
+func Format(path string) error {
+	overlay, err := Parse(path)
+	if err != nil {
+		return err
+	}
+	filePath, err := filepath.Abs(path)
+	if err != nil {
+		return fmt.Errorf("failed to open overlay file at path %q: %w", path, err)
+	}
+	formatted, err := overlay.ToString()
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(filePath, []byte(formatted), 0644)
 }
 
 // Format writes the file back out as YAML.

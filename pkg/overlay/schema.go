@@ -1,5 +1,10 @@
 package overlay
 
+import (
+	"bytes"
+	"gopkg.in/yaml.v3"
+)
+
 // Extensible provides a place for extensions to be added to components of the
 // Overlay configuration. These are  a map from x-* extension fields to their values.
 type Extensions map[string]any
@@ -20,6 +25,14 @@ type Overlay struct {
 
 	// Actions is the list of actions to perform to apply the overlay.
 	Actions []Action `yaml:"actions"`
+}
+
+func (o *Overlay) ToString() (string, error) {
+	buf := bytes.NewBuffer([]byte{})
+	decoder := yaml.NewEncoder(buf)
+	decoder.SetIndent(2)
+	err := decoder.Encode(o)
+	return buf.String(), err
 }
 
 // Info describes the metadata for the overlay.
@@ -44,7 +57,7 @@ type Action struct {
 
 	// Update is the sub-document to use to merge or replace in the target. This is
 	// ignored if Remove is set.
-	Update any `yaml:"update,omitempty"`
+	Update yaml.Node `yaml:"update,omitempty"`
 
 	// Remove marks the target node for removal rather than update.
 	Remove bool `yaml:"remove,omitempty"`

@@ -1,0 +1,32 @@
+overlay: 1.0.0
+info:
+  title: Drinks Overlay
+  version: 0.0.0
+extends: file:///Users/thomas/Code/speakeasy/speakeasy-api/openapi-overlay/pkg/overlay/testdata/openapi.yaml
+actions:
+  - target: $["tags"]
+    update:
+      - name: Testing
+        description: just a description
+  - target: $["paths"]["/drinks"]
+    update:
+      x-speakeasy-note:
+        "$ref": "./removeNote.yaml"
+  - target: $["paths"]["/drinks"]["get"]
+    remove: true
+  - target: $["paths"]["/drink/{name}"]["get"]["parameters"]
+    update:
+      - x-parameter-extension: foo
+        name: test
+        description: Test parameter
+        in: query
+        schema:
+          type: string
+  - target: $["paths"]["/drink/{name}"]["get"]["responses"]["200"]["description"]
+    update: Test response
+  - target: $["paths"]["/drink/{name}"]["get"]["responses"]["200"]["content"]["application/json"]["schema"]
+    update:
+      type: string
+  - target: $["paths"]["/drink/{name}"]["get"]["responses"]["200"]
+    update:
+      x-response-extension: foo
