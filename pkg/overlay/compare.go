@@ -3,10 +3,11 @@ package overlay
 import (
 	"bytes"
 	"fmt"
-	"gopkg.in/yaml.v3"
 	"log"
 	"path/filepath"
 	"strings"
+
+	"gopkg.in/yaml.v3"
 )
 
 // Compare compares input specifications from two files and returns an overlay
@@ -139,7 +140,7 @@ func walkTreesAndCollectActions(path simplePath, y1 *yaml.Node, y2 yaml.Node) ([
 		}
 
 		return []Action{{
-			Target: path.ToJSONPath(),
+			Target: path.ToJSONPath() + "[*]", // target all elements
 			Remove: true,
 		}, {
 			Target: path.ToJSONPath(),
