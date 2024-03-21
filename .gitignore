@@ -3,3 +3,4 @@ openapi-overlay
 *.swp
 *.iml
 .DS_Store
+.idea

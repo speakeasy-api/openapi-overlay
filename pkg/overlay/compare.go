@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"log"
-	"path/filepath"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -12,17 +11,10 @@ import (
 
 // Compare compares input specifications from two files and returns an overlay
 // that will convert the first into the second.
-func Compare(title, extends string, y1 *yaml.Node, y2 yaml.Node) (*Overlay, error) {
+func Compare(title string, y1 *yaml.Node, y2 yaml.Node) (*Overlay, error) {
 	actions, err := walkTreesAndCollectActions(simplePath{}, y1, y2)
 	if err != nil {
 		return nil, err
-	}
-
-	if extends != "" {
-		abs, err := filepath.Abs(extends)
-		if err == nil {
-			extends = "file://" + abs
-		}
 	}
 
 	return &Overlay{
@@ -31,7 +23,6 @@ func Compare(title, extends string, y1 *yaml.Node, y2 yaml.Node) (*Overlay, erro
 			Title:   title,
 			Version: "0.0.0",
 		},
-		Extends: extends,
 		Actions: actions,
 	}, nil
 }

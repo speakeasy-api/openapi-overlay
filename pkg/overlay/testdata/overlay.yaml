@@ -3,7 +3,6 @@ info:
   title: Drinks Overlay
   version: 1.2.3
   x-info-extension: 42
-extends: https://raw.githubusercontent.com/speakeasy-sdks/template-sdk/main/openapi.yaml
 actions:
   - target: $.paths["/drink/{name}"].get
     description: Test update

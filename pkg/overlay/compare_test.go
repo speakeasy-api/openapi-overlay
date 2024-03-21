@@ -20,7 +20,7 @@ func TestCompare(t *testing.T) {
 	o, err := loader.LoadOverlay("testdata/overlay-generated.yaml")
 	require.NoError(t, err)
 
-	o2, err := overlay.Compare("Drinks Overlay", "testdata/openapi.yaml", node, *node2)
+	o2, err := overlay.Compare("Drinks Overlay", node, *node2)
 	assert.NoError(t, err)
 
 	o1s, err := o.ToString()

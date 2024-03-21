@@ -2,7 +2,6 @@ overlay: 1.0.0
 info:
   title: Drinks Overlay
   version: 0.0.0
-extends: file:///Users/thomas/Code/speakeasy/speakeasy-api/openapi-overlay/pkg/overlay/testdata/openapi.yaml
 actions:
   - target: $["tags"]
     update:
