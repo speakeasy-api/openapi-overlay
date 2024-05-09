@@ -35,4 +35,9 @@ actions:
     update:
       - name: Testing
         description: just a description
+  - target: $.paths["/anything/selectGlobalServer"].x-my-ignore
+    update:
+      servers:
+        - url: http://localhost:35123
+          description: The default server.
 x-top-level-extension: true

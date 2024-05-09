@@ -104,9 +104,6 @@ func walkTreesAndCollectActions(path simplePath, y1 *yaml.Node, y2 yaml.Node) ([
 	if y1.Kind != y2.Kind {
 		return []Action{{
 			Target: path.ToJSONPath(),
-			Remove: true,
-		}, {
-			Target: path.ToJSONPath(),
 			Update: y2,
 		}}, nil
 	}

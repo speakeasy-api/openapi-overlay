@@ -55,6 +55,20 @@ paths:
     statusCodes: # Defines status codes to handle as errors for all operations
       - 4XX # Wildcard to handle all status codes in the 400-499 range
       - 5XX
+  /anything/selectGlobalServer:
+    x-my-ignore:
+      servers:
+        - url: http://localhost:35123
+          description: The default server.
+    get:
+      operationId: selectGlobalServer
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Optional-Header:
+              schema:
+                type: string
   /authenticate:
     post:
       operationId: authenticate

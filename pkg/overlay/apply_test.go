@@ -29,6 +29,9 @@ func NodeMatchesFile(
 	expectedBytes, err := os.ReadFile(expectedFile)
 	require.NoError(t, err, variadoc("failed to read expected file: ")...)
 
+	// lazy redo snapshot
+	//os.WriteFile(expectedFile, actualBuf.Bytes(), 0644)
+
 	//t.Log("### EXPECT START ###\n" + string(expectedBytes) + "\n### EXPECT END ###\n")
 	//t.Log("### ACTUAL START ###\n" + actualBuf.String() + "\n### ACTUAL END ###\n")
 

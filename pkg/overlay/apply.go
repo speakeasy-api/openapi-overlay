@@ -104,7 +104,7 @@ func updateNode(node *yaml.Node, updateNode yaml.Node) error {
 
 func mergeNode(node *yaml.Node, merge yaml.Node) {
 	if node.Kind != merge.Kind {
-		node.Value = merge.Value
+		*node = merge
 		return
 	}
 	switch node.Kind {
