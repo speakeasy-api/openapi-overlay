@@ -1,9 +1,13 @@
 package loader
 
 import (
+	"bytes"
 	"fmt"
+	"github.com/pb33f/libopenapi"
+	"github.com/pb33f/libopenapi/utils"
 	"github.com/speakeasy-api/openapi-overlay/pkg/overlay"
 	"gopkg.in/yaml.v3"
+	"io"
 	"net/url"
 	"os"
 )
@@ -48,13 +52,31 @@ func LoadSpecification(path string) (*yaml.Node, error) {
 		return nil, fmt.Errorf("failed to open schema from path %q: %w", path, err)
 	}
 
-	var ys yaml.Node
-	err = yaml.NewDecoder(rs).Decode(&ys)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse schema at path %q: %w", path, err)
-	}
+	if utils.IsYAML(path) {
+		var node yaml.Node
+		if err := yaml.NewDecoder(rs).Decode(&node); err != nil {
+			return nil, fmt.Errorf("failed to decode YAML: %w", err)
+		}
+		return &node, err
+	} else {
+		// We use libopenapi in order to preserve JSON key ordering
+		var fileBytes bytes.Buffer
+		if _, err := io.Copy(&fileBytes, rs); err != nil {
+			return nil, err
+		}
 
-	return &ys, nil
+		doc, err := libopenapi.NewDocument(fileBytes.Bytes())
+		if err != nil {
+			return nil, err
+		}
+
+		v3Model, errs := doc.BuildV3Model()
+		if len(errs) > 0 {
+			return nil, fmt.Errorf("failed to build V3 model: %v", errs)
+		}
+
+		return v3Model.Index.GetRootNode(), nil
+	}
 }
 
 // LoadEitherSpecification is a convenience function that will load a
