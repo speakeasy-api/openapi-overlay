@@ -15,7 +15,7 @@ func (o *Overlay) ApplyTo(root *yaml.Node) error {
 		if action.Remove {
 			err = applyRemoveAction(root, action)
 		} else {
-			err = applyUpdateAction(root, action)
+			err = applyUpdateAction(root, action, &[]string{})
 		}
 
 		if err != nil {
@@ -26,18 +26,28 @@ func (o *Overlay) ApplyTo(root *yaml.Node) error {
 	return nil
 }
 
-func (o *Overlay) ApplyToStrict(root *yaml.Node) error {
+func (o *Overlay) ApplyToStrict(root *yaml.Node) (error, []string) {
 	multiError := []string{}
-	for _, action := range o.Actions {
+	warnings := []string{}
+	for i, action := range o.Actions {
 		err := validateSelectorHasAtLeastOneTarget(root, action)
 		if err != nil {
 			multiError = append(multiError, err.Error())
 		}
+		if action.Remove {
+			err = applyRemoveAction(root, action)
+		} else {
+			actionWarnings := []string{}
+			err = applyUpdateAction(root, action, &actionWarnings)
+			for _, warning := range actionWarnings {
+				warnings = append(warnings, fmt.Sprintf("update action (%v / %v) target=%s: %s", i+1, len(o.Actions), action.Target, warning))
+			}
+		}
 	}
 	if len(multiError) > 0 {
-		return fmt.Errorf("error applying overlay (strict): %v", strings.Join(multiError, ","))
+		return fmt.Errorf("error applying overlay (strict): %v", strings.Join(multiError, ",")), warnings
 	}
-	return o.ApplyTo(root)
+	return nil, warnings
 }
 
 func validateSelectorHasAtLeastOneTarget(root *yaml.Node, action Action) error {
@@ -107,7 +117,7 @@ func removeNode(idx parentIndex, node *yaml.Node) {
 	}
 }
 
-func applyUpdateAction(root *yaml.Node, action Action) error {
+func applyUpdateAction(root *yaml.Node, action Action, warnings *[]string) error {
 	if action.Target == "" {
 		return nil
 	}
@@ -126,10 +136,21 @@ func applyUpdateAction(root *yaml.Node, action Action) error {
 		return err
 	}
 
+	prior, err := yaml.Marshal(root)
+	if err != nil {
+		return err
+	}
 	for _, node := range nodes {
 		if err := updateNode(node, action.Update); err != nil {
 			return err
 		}
+	}
+	post, err := yaml.Marshal(root)
+	if err != nil {
+		return err
+	}
+	if warnings != nil && string(prior) == string(post) {
+		*warnings = append(*warnings, "does nothing")
 	}
 
 	return nil

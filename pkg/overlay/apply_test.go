@@ -62,9 +62,16 @@ func TestApplyToStrict(t *testing.T) {
 	o, err := loader.LoadOverlay("testdata/overlay-mismatched.yaml")
 	require.NoError(t, err)
 
-	err = o.ApplyToStrict(node)
+	err, warnings := o.ApplyToStrict(node)
 	assert.Error(t, err, "error applying overlay (strict): selector \"$.unknown-attribute\" did not match any targets")
+	assert.Len(t, warnings, 2)
 	o.Actions = o.Actions[1:]
-	assert.NoError(t, o.ApplyToStrict(node))
+	node, err = loader.LoadSpecification("testdata/openapi.yaml")
+	require.NoError(t, err)
+
+	err, warnings = o.ApplyToStrict(node)
+	assert.NoError(t, err)
+	assert.Len(t, warnings, 1)
+	assert.Equal(t, "update action (2 / 2) target=$.info.title: does nothing", warnings[0])
 	NodeMatchesFile(t, node, "testdata/openapi-strict-onechange.yaml")
 }
