@@ -1,8 +1,10 @@
 package overlay
 
 import (
+	"fmt"
 	"github.com/vmware-labs/yaml-jsonpath/pkg/yamlpath"
 	"gopkg.in/yaml.v3"
+	"strings"
 )
 
 // ApplyTo will take an overlay and apply its changes to the given YAML
@@ -19,6 +21,42 @@ func (o *Overlay) ApplyTo(root *yaml.Node) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (o *Overlay) ApplyToStrict(root *yaml.Node) error {
+	multiError := []string{}
+	for _, action := range o.Actions {
+		err := validateSelectorHasAtLeastOneTarget(root, action)
+		if err != nil {
+			multiError = append(multiError, err.Error())
+		}
+	}
+	if len(multiError) > 0 {
+		return fmt.Errorf("error applying overlay (strict): %v", strings.Join(multiError, ","))
+	}
+	return o.ApplyTo(root)
+}
+
+func validateSelectorHasAtLeastOneTarget(root *yaml.Node, action Action) error {
+	if action.Target == "" {
+		return nil
+	}
+
+	p, err := yamlpath.NewPath(action.Target)
+	if err != nil {
+		return err
+	}
+
+	nodes, err := p.Find(root)
+	if err != nil {
+		return err
+	}
+
+	if len(nodes) == 0 {
+		return fmt.Errorf("selector %q did not match any targets", action.Target)
 	}
 
 	return nil

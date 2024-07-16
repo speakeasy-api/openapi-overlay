@@ -52,3 +52,16 @@ func TestApplyTo(t *testing.T) {
 
 	NodeMatchesFile(t, node, "testdata/openapi-overlayed.yaml")
 }
+
+func TestApplyToStrict(t *testing.T) {
+	t.Parallel()
+
+	node, err := loader.LoadSpecification("testdata/openapi.yaml")
+	require.NoError(t, err)
+
+	o, err := loader.LoadOverlay("testdata/overlay-mismatched.yaml")
+	require.NoError(t, err)
+
+	err = o.ApplyToStrict(node)
+	assert.Error(t, err, "error applying overlay (strict): selector \"$.unknown-attribute\" did not match any targets")
+}
