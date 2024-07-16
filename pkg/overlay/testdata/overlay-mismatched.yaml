@@ -6,3 +6,5 @@ actions:
   - target: $.unknown-attribute
     update:
       description: just a description
+  - target: $.info.title
+    update: "changed"

@@ -64,4 +64,7 @@ func TestApplyToStrict(t *testing.T) {
 
 	err = o.ApplyToStrict(node)
 	assert.Error(t, err, "error applying overlay (strict): selector \"$.unknown-attribute\" did not match any targets")
+	o.Actions = o.Actions[1:]
+	assert.NoError(t, o.ApplyToStrict(node))
+	NodeMatchesFile(t, node, "testdata/openapi-strict-onechange.yaml")
 }
