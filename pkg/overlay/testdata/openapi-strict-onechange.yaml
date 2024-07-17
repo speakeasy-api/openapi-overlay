@@ -128,7 +128,7 @@ paths:
           $ref: "#/components/responses/APIError"
         default:
           $ref: "#/components/responses/UnknownError"
-  /drink/{name}: #TODO: this should be by product code and we should have search by name
+  /drink/{name}: # Example comment -- should be maintained
     get:
       operationId: getDrink
       summary: Get a drink.
