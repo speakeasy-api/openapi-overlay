@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/speakeasy-api/openapi-overlay/cmd"
+	"github.com/vnarek/openapi-overlay/cmd"
 )
 
 func main() {

@@ -1,6 +1,6 @@
 [![made-with-Go](https://img.shields.io/badge/Made%20with-Go-1f425f.svg)](https://go.dev/)
-[![Go Report Card](https://goreportcard.com/badge/github.com/speakeasy-api/openapi-overlay)](https://goreportcard.com/report/github.com/speakeasy-api/openapi-overlay)
-[![GoDoc](https://godoc.org/github.com/speakeasy-api/openapi-overlay?status.svg)](https://godoc.org/github.com/speakeasy-api/openapi-overlay)
+[![Go Report Card](https://goreportcard.com/badge/github.com/vnarek/openapi-overlay)](https://goreportcard.com/report/github.com/vnarek/openapi-overlay)
+[![GoDoc](https://godoc.org/github.com/vnarek/openapi-overlay?status.svg)](https://godoc.org/github.com/vnarek/openapi-overlay)
 
 
 # OpenAPI Overlay
@@ -32,7 +32,7 @@ so it should be able to parse either YAML or JSON with the same parser.
 Install it with the `go install` command:
 
 ```sh
-go install github.com/speakeasy-api/openapi-overlay@latest
+go install github.com/vnarek/openapi-overlay@latest
 ```
 
 # Usage

@@ -3,8 +3,8 @@ package cmd
 import (
 	"os"
 
-	"github.com/speakeasy-api/openapi-overlay/pkg/loader"
 	"github.com/spf13/cobra"
+	"github.com/vnarek/openapi-overlay/pkg/loader"
 	"gopkg.in/yaml.v3"
 )
 

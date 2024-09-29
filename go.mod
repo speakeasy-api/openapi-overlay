@@ -1,4 +1,4 @@
-module github.com/speakeasy-api/openapi-overlay
+module github.com/vnarek/openapi-overlay
 
 go 1.21.0
 
@@ -16,8 +16,6 @@ require (
 	github.com/onsi/gomega v1.27.6 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	golang.org/x/exp v0.0.0-20230811145659-89c5cff77bcb // indirect
 	golang.org/x/net v0.13.0 // indirect
-	golang.org/x/sync v0.1.0 // indirect
 	golang.org/x/sys v0.10.0 // indirect
 )
