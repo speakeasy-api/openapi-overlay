@@ -2,6 +2,8 @@ package loader
 
 import (
 	"fmt"
+	goyaml "github.com/goccy/go-yaml"
+	"github.com/goccy/go-yaml/ast"
 	"github.com/speakeasy-api/openapi-overlay/pkg/overlay"
 	"gopkg.in/yaml.v3"
 	"net/url"
@@ -48,13 +50,18 @@ func LoadSpecification(path string) (*yaml.Node, error) {
 		return nil, fmt.Errorf("failed to open schema from path %q: %w", path, err)
 	}
 
-	var ys yaml.Node
-	err = yaml.NewDecoder(rs).Decode(&ys)
+	var ys ast.Node
+	err = goyaml.NewDecoder(rs).Decode(&ys)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse schema at path %q: %w", path, err)
 	}
 
-	return &ys, nil
+	enc := goyaml.NewEncoder(os.Stdout, goyaml.Indent(2), goyaml.UseLiteralStyleIfMultiline(true))
+	enc.Encode(ys)
+
+	os.Exit(1)
+
+	return nil, nil
 }
 
 // LoadEitherSpecification is a convenience function that will load a

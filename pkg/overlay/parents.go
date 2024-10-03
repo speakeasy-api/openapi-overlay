@@ -1,23 +1,20 @@
 package overlay
 
-import "gopkg.in/yaml.v3"
+import (
+	"github.com/goccy/go-yaml/ast"
+)
 
-type parentIndex map[*yaml.Node]*yaml.Node
-
-// newParentIndex returns a new parentIndex, populated for the given root node.
-func newParentIndex(root *yaml.Node) parentIndex {
-	index := parentIndex{}
-	index.indexNodeRecursively(root)
-	return index
+type parentIndex struct {
+	root ast.Node
 }
 
-func (index parentIndex) indexNodeRecursively(parent *yaml.Node) {
-	for _, child := range parent.Content {
-		index[child] = parent
-		index.indexNodeRecursively(child)
+// newParentIndex returns a new parentIndex, populated for the given root node.
+func newParentIndex(root ast.Node) parentIndex {
+	return parentIndex{
+		root: root,
 	}
 }
 
-func (index parentIndex) getParent(child *yaml.Node) *yaml.Node {
-	return index[child]
+func (index parentIndex) getParent(child ast.Node) ast.Node {
+	return ast.Parent(index.root, child)
 }

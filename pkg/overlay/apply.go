@@ -2,14 +2,15 @@ package overlay
 
 import (
 	"fmt"
+	"github.com/goccy/go-yaml"
+	"github.com/goccy/go-yaml/ast"
 	"github.com/vmware-labs/yaml-jsonpath/pkg/yamlpath"
-	"gopkg.in/yaml.v3"
 	"strings"
 )
 
 // ApplyTo will take an overlay and apply its changes to the given YAML
 // document.
-func (o *Overlay) ApplyTo(root *yaml.Node) error {
+func (o *Overlay) ApplyTo(root *ast.Node) error {
 	for _, action := range o.Actions {
 		var err error
 		if action.Remove {
@@ -26,7 +27,7 @@ func (o *Overlay) ApplyTo(root *yaml.Node) error {
 	return nil
 }
 
-func (o *Overlay) ApplyToStrict(root *yaml.Node) (error, []string) {
+func (o *Overlay) ApplyToStrict(root *ast.Node) (error, []string) {
 	multiError := []string{}
 	warnings := []string{}
 	for i, action := range o.Actions {
@@ -50,74 +51,82 @@ func (o *Overlay) ApplyToStrict(root *yaml.Node) (error, []string) {
 	return nil, warnings
 }
 
-func validateSelectorHasAtLeastOneTarget(root *yaml.Node, action Action) error {
+func validateSelectorHasAtLeastOneTarget(root *ast.Node, action Action) error {
 	if action.Target == "" {
 		return nil
 	}
 
-	p, err := yamlpath.NewPath(action.Target)
+	p, err := yaml.PathString(action.Target)
 	if err != nil {
 		return err
 	}
 
-	nodes, err := p.Find(root)
+	_, err = p.FilterNode(*root)
 	if err != nil {
-		return err
-	}
-
-	if len(nodes) == 0 {
-		return fmt.Errorf("selector %q did not match any targets", action.Target)
+		return fmt.Errorf("selector %q did not match any targets: %w", action.Target, err)
 	}
 
 	return nil
 }
 
-func applyRemoveAction(root *yaml.Node, action Action) error {
+func applyRemoveAction(root ast.Node, action Action) error {
 	if action.Target == "" {
 		return nil
 	}
 
 	idx := newParentIndex(root)
 
-	p, err := yamlpath.NewPath(action.Target)
+	p, err := yaml.PathString(action.Target)
 	if err != nil {
 		return err
 	}
 
-	nodes, err := p.Find(root)
+	filtered, err := p.FilterNode(root)
 	if err != nil {
 		return err
 	}
 
-	for _, node := range nodes {
-		removeNode(idx, node)
+	removeNode(idx, filtered)
+
+	return nil
+}
+
+func removeNode(idx parentIndex, node ast.Node) error {
+	parent := idx.getParent(node)
+	if parent == nil {
+		return fmt.Errorf("parent not found for node")
+	}
+
+	switch p := parent.(type) {
+	case *ast.MappingNode:
+		for i, value := range p.Values {
+			if value.Key == node || value.Value == node {
+				// we have to delete the key too
+				p.Values = append(p.Values[:i-1], p.Values[i+1:]...)
+				return nil
+			}
+		}
+	case *ast.SequenceNode:
+		for i, value := range p.Values {
+			if value == node {
+				p.Values = append(p.Values[:i], p.Values[i+1:]...)
+				return nil
+			}
+		}
+	case *ast.DocumentNode:
+		if p.Body == node {
+			p.Body = nil
+			return nil
+		}
+	// Add more cases as needed for other node types
+	default:
+		return fmt.Errorf("unsupported parent node type: %T", parent)
 	}
 
 	return nil
 }
 
-func removeNode(idx parentIndex, node *yaml.Node) {
-	parent := idx.getParent(node)
-	if parent == nil {
-		return
-	}
-
-	for i, child := range parent.Content {
-		if child == node {
-			switch parent.Kind {
-			case yaml.MappingNode:
-				// we have to delete the key too
-				parent.Content = append(parent.Content[:i-1], parent.Content[i+1:]...)
-				return
-			case yaml.SequenceNode:
-				parent.Content = append(parent.Content[:i], parent.Content[i+1:]...)
-				return
-			}
-		}
-	}
-}
-
-func applyUpdateAction(root *yaml.Node, action Action, warnings *[]string) error {
+func applyUpdateAction(root *ast.Node, action Action, warnings *[]string) error {
 	if action.Target == "" {
 		return nil
 	}
@@ -156,12 +165,12 @@ func applyUpdateAction(root *yaml.Node, action Action, warnings *[]string) error
 	return nil
 }
 
-func updateNode(node *yaml.Node, updateNode yaml.Node) error {
+func updateNode(node *ast.Node, updateNode ast.Node) error {
 	mergeNode(node, updateNode)
 	return nil
 }
 
-func mergeNode(node *yaml.Node, merge yaml.Node) {
+func mergeNode(node *ast.Node, merge ast.Node) {
 	if node.Kind != merge.Kind {
 		*node = merge
 		return
@@ -178,7 +187,7 @@ func mergeNode(node *yaml.Node, merge yaml.Node) {
 
 // mergeMappingNode will perform a shallow merge of the merge node into the main
 // node.
-func mergeMappingNode(node *yaml.Node, merge yaml.Node) {
+func mergeMappingNode(node *ast.Node, merge ast.Node) {
 NextKey:
 	for i := 0; i < len(merge.Content); i += 2 {
 		mergeKey := merge.Content[i].Value
@@ -197,6 +206,6 @@ NextKey:
 }
 
 // mergeSequenceNode will append the merge node's content to the original node.
-func mergeSequenceNode(node *yaml.Node, merge yaml.Node) {
+func mergeSequenceNode(node *ast.Node, merge ast.Node) {
 	node.Content = append(node.Content, merge.Content...)
 }

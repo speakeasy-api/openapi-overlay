@@ -103,7 +103,10 @@ paths:
       x-speakeasy-usage-example: true
       operationId: listDrinks
       summary: Get a list of drinks.
-      description: Get a list of drinks, if authenticated this will include stock levels and product codes otherwise it will only include public information.
+      description: |
+        Get a list of drinks, if authenticated this will include stock levels and 
+        product codes otherwise it will only include public information.
+        A multi-line description.
       security:
         - {}
       tags:
