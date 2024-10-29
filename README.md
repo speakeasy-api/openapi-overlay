@@ -5,6 +5,9 @@
 
 # OpenAPI Overlay
 
+<a href="https://speakeasy.com/openapi/overlays"><img src="https://custom-icon-badges.demolab.com/badge/-Overlay%20Reference-212015?style=for-the-badge&logoColor=FBE331&logo=speakeasy&labelColor=545454" /></a>
+<a href="https://join.slack.com/t/speakeasy-dev/shared_invite/zt-1cwb3flxz-lS5SyZxAsF_3NOq5xc8Cjw"><img src="https://img.shields.io/static/v1?label=Slack&message=Join&color=7289da&style=for-the-badge" /></a>
+
 > ⚠️ This an alpha implementation. If you'd like to discuss a production use case please join the Speakeasy [slack](https://join.slack.com/t/speakeasy-dev/shared_invite/zt-1df0lalk5-HCAlpcQiqPw8vGukQWhexw).
 
 This is an implementation of the [OpenAPI Overlay
