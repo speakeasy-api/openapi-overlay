@@ -2,7 +2,8 @@ package loader
 
 import (
 	"fmt"
-	"github.com/speakeasy-api/openapi-overlay/pkg/overlay"
+
+	"github.com/vnarek/openapi-overlay/pkg/overlay"
 )
 
 // LoadOverlay is a tool for loading and parsing an overlay file from the file

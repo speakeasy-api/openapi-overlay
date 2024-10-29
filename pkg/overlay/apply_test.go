@@ -2,12 +2,13 @@ package overlay_test
 
 import (
 	"bytes"
-	"github.com/speakeasy-api/openapi-overlay/pkg/loader"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"gopkg.in/yaml.v3"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/vnarek/openapi-overlay/pkg/loader"
+	"gopkg.in/yaml.v3"
 )
 
 // NodeMatchesFile is a test that marshals the YAML file from the given node,

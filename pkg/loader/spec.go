@@ -2,10 +2,11 @@ package loader
 
 import (
 	"fmt"
-	"github.com/speakeasy-api/openapi-overlay/pkg/overlay"
-	"gopkg.in/yaml.v3"
 	"net/url"
 	"os"
+
+	"github.com/vnarek/openapi-overlay/pkg/overlay"
+	"gopkg.in/yaml.v3"
 )
 
 // GetOverlayExtendsPath returns the path to file if the extends URL is a file

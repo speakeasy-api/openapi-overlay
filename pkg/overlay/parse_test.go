@@ -1,11 +1,12 @@
 package overlay_test
 
 import (
-	"github.com/speakeasy-api/openapi-overlay/pkg/overlay"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/vnarek/openapi-overlay/pkg/overlay"
 )
 
 var expectOverlay = &overlay.Overlay{
