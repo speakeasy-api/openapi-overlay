@@ -2,10 +2,11 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/speakeasy-api/openapi-overlay/pkg/loader"
-	"github.com/speakeasy-api/openapi-overlay/pkg/overlay"
-	"github.com/spf13/cobra"
 	"os"
+
+	"github.com/spf13/cobra"
+	"github.com/vnarek/openapi-overlay/pkg/loader"
+	"github.com/vnarek/openapi-overlay/pkg/overlay"
 )
 
 var (
