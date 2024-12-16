@@ -89,7 +89,7 @@ paths:
                   type: string
       responses:
         "200":
-          description: The api key to use for authenticated endpoints.
+          description: ""
           content:
             application/json:
               schema:
