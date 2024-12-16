@@ -3,6 +3,7 @@ package cmd
 import (
 	"github.com/speakeasy-api/openapi-overlay/pkg/loader"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v3"
 	"os"
 )
 
@@ -24,7 +25,7 @@ func RunApply(cmd *cobra.Command, args []string) {
 	}
 
 	var specFile string
-	if len(args) > 0 {
+	if len(args) > 1 {
 		specFile = args[1]
 	}
 	ys, specFile, err := loader.LoadEitherSpecification(specFile, o)
@@ -37,7 +38,7 @@ func RunApply(cmd *cobra.Command, args []string) {
 		Dief("Failed to apply overlay to spec file %q: %v", specFile, err)
 	}
 
-	err = o.Format(os.Stdout)
+	err = yaml.NewEncoder(os.Stdout).Encode(ys)
 	if err != nil {
 		Dief("Failed to encode spec file %q: %v", specFile, err)
 	}
