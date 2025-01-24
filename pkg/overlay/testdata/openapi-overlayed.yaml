@@ -89,7 +89,7 @@ paths:
                   type: string
       responses:
         "200":
-          description: The api key to use for authenticated endpoints.
+          description: ""
           content:
             application/json:
               schema:
@@ -106,11 +106,15 @@ paths:
   /drinks:
     x-speakeasy-note:
       "$ref": "./removeNote.yaml"
-  /drink/{name}: #TODO: this should be by product code and we should have search by name
+  /drink/{name}: # Example comment -- should be maintained
     get:
       operationId: getDrink
       summary: Get a drink.
-      description: Get a drink by name, if authenticated this will include stock levels and product codes otherwise it will only include public information.
+      description: |
+        A long description
+        to validate that we handle indentation properly
+
+        With a second paragraph
       tags:
         - drinks
       parameters:
