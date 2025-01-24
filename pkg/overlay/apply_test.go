@@ -33,7 +33,7 @@ func NodeMatchesFile(
 	//os.WriteFile(expectedFile, actualBuf.Bytes(), 0644)
 
 	//t.Log("### EXPECT START ###\n" + string(expectedBytes) + "\n### EXPECT END ###\n")
-	//t.Log("### ACTUAL START ###\n" + actualBuf.String() + "\n### ACTUAL END ###\n")
+	//t.Log("### ACTUAL START ###\n" + actualBuf.string() + "\n### ACTUAL END ###\n")
 
 	assert.Equal(t, string(expectedBytes), actualBuf.String(), variadoc("node does not match expected file: ")...)
 }

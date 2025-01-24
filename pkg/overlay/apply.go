@@ -2,7 +2,8 @@ package overlay
 
 import (
 	"fmt"
-	"github.com/vmware-labs/yaml-jsonpath/pkg/yamlpath"
+	"github.com/speakeasy-api/jsonpath/pkg/jsonpath"
+	"github.com/speakeasy-api/jsonpath/pkg/jsonpath/config"
 	"gopkg.in/yaml.v3"
 	"strings"
 )
@@ -55,15 +56,12 @@ func validateSelectorHasAtLeastOneTarget(root *yaml.Node, action Action) error {
 		return nil
 	}
 
-	p, err := yamlpath.NewPath(action.Target)
+	p, err := jsonpath.NewPath(action.Target)
 	if err != nil {
 		return err
 	}
 
-	nodes, err := p.Find(root)
-	if err != nil {
-		return err
-	}
+	nodes := p.Query(root)
 
 	if len(nodes) == 0 {
 		return fmt.Errorf("selector %q did not match any targets", action.Target)
@@ -79,12 +77,12 @@ func applyRemoveAction(root *yaml.Node, action Action) error {
 
 	idx := newParentIndex(root)
 
-	p, err := yamlpath.NewPath(action.Target)
+	p, err := jsonpath.NewPath(action.Target, config.WithPropertyNameExtension())
 	if err != nil {
 		return err
 	}
 
-	nodes, err := p.Find(root)
+	nodes := p.Query(root)
 	if err != nil {
 		return err
 	}
@@ -126,20 +124,17 @@ func applyUpdateAction(root *yaml.Node, action Action, warnings *[]string) error
 		return nil
 	}
 
-	p, err := yamlpath.NewPath(action.Target)
+	p, err := jsonpath.NewPath(action.Target, config.WithPropertyNameExtension())
 	if err != nil {
 		return err
 	}
 
-	nodes, err := p.Find(root)
-	if err != nil {
-		return err
-	}
-
+	nodes := p.Query(root)
 	prior, err := yaml.Marshal(root)
 	if err != nil {
 		return err
 	}
+
 	for _, node := range nodes {
 		if err := updateNode(node, action.Update); err != nil {
 			return err

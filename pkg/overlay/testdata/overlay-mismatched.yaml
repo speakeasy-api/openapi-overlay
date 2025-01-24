@@ -3,7 +3,7 @@ info:
   title: Drinks Overlay
   version: 0.0.0
 actions:
-  - target: $.unknown-attribute
+  - target: $["unknown-attribute"]
     description: "failing overlay due to this element"
     update:
       description: just a description
