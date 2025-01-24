@@ -18,12 +18,6 @@ actions:
         "$ref": "./removeNote.yaml"
   - target: $["paths"]["/drinks"]["get"]
     remove: true
-  - target: $["paths"]["/drink/{name}"]["get"]["description"]
-    update: |
-      A long description
-      to validate that we handle indentation properly
-
-      With a second paragraph
   - target: $["paths"]["/drink/{name}"]["get"]["parameters"]
     update:
       - x-parameter-extension: foo

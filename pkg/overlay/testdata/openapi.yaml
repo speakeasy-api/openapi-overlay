@@ -85,7 +85,7 @@ paths:
                   type: string
       responses:
         "200":
-          description: ""
+          description: The api key to use for authenticated endpoints.
           content:
             application/json:
               schema:
@@ -131,7 +131,7 @@ paths:
         default:
           $ref: "#/components/responses/UnknownError"
 
-  /drink/{name}: # Example comment -- should be maintained
+  /drink/{name}: #TODO: this should be by product code and we should have search by name
     get:
       operationId: getDrink
       summary: Get a drink.

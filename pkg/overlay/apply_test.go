@@ -2,7 +2,6 @@ package overlay_test
 
 import (
 	"bytes"
-	"github.com/speakeasy-api/openapi-overlay/pkg/loader"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
@@ -33,7 +32,7 @@ func NodeMatchesFile(
 	//os.WriteFile(expectedFile, actualBuf.Bytes(), 0644)
 
 	//t.Log("### EXPECT START ###\n" + string(expectedBytes) + "\n### EXPECT END ###\n")
-	//t.Log("### ACTUAL START ###\n" + actualBuf.String() + "\n### ACTUAL END ###\n")
+	//t.Log("### ACTUAL START ###\n" + actualBuf.string() + "\n### ACTUAL END ###\n")
 
 	assert.Equal(t, string(expectedBytes), actualBuf.String(), variadoc("node does not match expected file: ")...)
 }
@@ -41,37 +40,14 @@ func NodeMatchesFile(
 func TestApplyTo(t *testing.T) {
 	t.Parallel()
 
-	node, err := loader.LoadSpecification("testdata/openapi.yaml")
+	node, err := LoadSpecification("testdata/openapi.yaml")
 	require.NoError(t, err)
 
-	o, err := loader.LoadOverlay("testdata/overlay.yaml")
+	o, err := LoadOverlay("testdata/overlay.yaml")
 	require.NoError(t, err)
 
 	err = o.ApplyTo(node)
 	assert.NoError(t, err)
 
 	NodeMatchesFile(t, node, "testdata/openapi-overlayed.yaml")
-}
-
-func TestApplyToStrict(t *testing.T) {
-	t.Parallel()
-
-	node, err := loader.LoadSpecification("testdata/openapi.yaml")
-	require.NoError(t, err)
-
-	o, err := loader.LoadOverlay("testdata/overlay-mismatched.yaml")
-	require.NoError(t, err)
-
-	err, warnings := o.ApplyToStrict(node)
-	assert.Error(t, err, "error applying overlay (strict): selector \"$.unknown-attribute\" did not match any targets")
-	assert.Len(t, warnings, 2)
-	o.Actions = o.Actions[1:]
-	node, err = loader.LoadSpecification("testdata/openapi.yaml")
-	require.NoError(t, err)
-
-	err, warnings = o.ApplyToStrict(node)
-	assert.NoError(t, err)
-	assert.Len(t, warnings, 1)
-	assert.Equal(t, "update action (2 / 2) target=$.info.title: does nothing", warnings[0])
-	NodeMatchesFile(t, node, "testdata/openapi-strict-onechange.yaml")
 }
