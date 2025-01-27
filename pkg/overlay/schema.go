@@ -17,9 +17,7 @@ type Extensions map[string]any
 type Overlay struct {
 	Extensions `yaml:"-,inline"`
 
-	// Version is the version of the overlay configuration.
-	// This should be set to `1.0.1` for compatability with RFC9535 (JSONPath)
-	// If set to 1.0.0, the overlay will be evaluated using vmware-yamlpath behaviour.
+	// Version is the version of the overlay configuration. This is only ever expected to be 1.0.0
 	Version string `yaml:"overlay"`
 
 	// JSONPathVersion should be set to rfc9535, and is used for backwards compatability purposes
