@@ -1,10 +1,22 @@
 overlay: 1.0.0
+x-speakeasy-jsonpath: rfc9535
 info:
   title: Drinks Overlay
   version: 0.0.0
 actions:
+  - target: $["tags"][*]
+    remove: true
   - target: $["tags"]
     update:
+      - name: drinks
+        description: The drinks endpoints.
+      - name: ingredients
+        description: The ingredients endpoints.
+      - name: orders
+        description: The orders endpoints.
+      - name: authentication
+        x-something: else
+      - name: config
       - name: Testing
         description: just a description
   - target: $["paths"]["/anything/selectGlobalServer"]["x-my-ignore"]

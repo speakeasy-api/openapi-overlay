@@ -46,7 +46,7 @@ tags:
   - name: orders
     description: The orders endpoints.
   - name: authentication
-    description: The authentication endpoints.
+    x-something: else
   - name: config
   - name: Testing
     description: just a description
