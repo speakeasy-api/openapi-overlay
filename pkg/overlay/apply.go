@@ -117,8 +117,13 @@ func removeNode(idx parentIndex, node *yaml.Node) {
 		if child == node {
 			switch parent.Kind {
 			case yaml.MappingNode:
-				// we have to delete the key too
-				parent.Content = append(parent.Content[:i-1], parent.Content[i+1:]...)
+				if i%2 == 1 {
+					// if we select a value, we should delete the key too
+					parent.Content = append(parent.Content[:i-1], parent.Content[i+1:]...)
+				} else {
+					// if we select a key, we should delete the value
+					parent.Content = append(parent.Content[:i], parent.Content[i+2:]...)
+				}
 				return
 			case yaml.SequenceNode:
 				parent.Content = append(parent.Content[:i], parent.Content[i+1:]...)

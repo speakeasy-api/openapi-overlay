@@ -36,6 +36,8 @@ actions:
     update:
       - name: Testing
         description: just a description
+  - target: $.tags[?(@.name == "authentication")].description~
+    remove: true
   - target: $.paths["/anything/selectGlobalServer"]["x-my-ignore"]
     update:
       servers:
