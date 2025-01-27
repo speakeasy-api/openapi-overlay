@@ -2,6 +2,8 @@ package overlay
 
 import (
 	"fmt"
+	"github.com/speakeasy-api/jsonpath/pkg/jsonpath/config"
+	"github.com/speakeasy-api/jsonpath/pkg/jsonpath/token"
 	"gopkg.in/yaml.v3"
 	"strings"
 )
@@ -28,11 +30,15 @@ func (o *Overlay) ApplyTo(root *yaml.Node) error {
 func (o *Overlay) ApplyToStrict(root *yaml.Node) (error, []string) {
 	multiError := []string{}
 	warnings := []string{}
-	if o.Extensions == nil || o.Extensions["x-speakeasy-jsonpath"] != "rfc9535" {
-		warnings = append(warnings, "overlay lacks `x-speakeasy-jsonpath: rfc9535` extension")
-	}
-
+	hasFilterExpression := false
 	for i, action := range o.Actions {
+		tokens := token.NewTokenizer(action.Target, config.WithPropertyNameExtension()).Tokenize()
+		for _, tok := range tokens {
+			if tok.Token == token.FILTER {
+				hasFilterExpression = true
+			}
+		}
+
 		actionWarnings := []string{}
 		err := o.validateSelectorHasAtLeastOneTarget(root, action)
 		if err != nil {
@@ -46,6 +52,10 @@ func (o *Overlay) ApplyToStrict(root *yaml.Node) (error, []string) {
 		for _, warning := range actionWarnings {
 			warnings = append(warnings, fmt.Sprintf("update action (%v / %v) target=%s: %s", i+1, len(o.Actions), action.Target, warning))
 		}
+	}
+
+	if hasFilterExpression && !o.UsesRFC9535() {
+		warnings = append(warnings, "overlay has a filter expression but lacks `x-speakeasy-jsonpath: rfc9535` extension. Deprecated jsonpath behaviour in use. See overlay.speakeasy.com for the implementation playground.")
 	}
 
 	if len(multiError) > 0 {

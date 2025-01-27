@@ -92,15 +92,15 @@ func TestApplyToOld(t *testing.T) {
 	err, warnings := o.ApplyToStrict(nodeOld)
 	require.NoError(t, err)
 	require.Len(t, warnings, 2)
-	require.Contains(t, warnings[0], "x-speakeasy-jsonpath: rfc9535")
-	require.Contains(t, warnings[1], "invalid rfc9535 jsonpath")
+	require.Contains(t, warnings[0], "invalid rfc9535 jsonpath")
+	require.Contains(t, warnings[1], "x-speakeasy-jsonpath: rfc9535")
 
 	path, err := jsonpath.NewPath(`$.paths["/anything/selectGlobalServer"]`)
 	require.NoError(t, err)
 	result := path.Query(nodeOld)
 	require.NoError(t, err)
 	require.Equal(t, 0, len(result))
-	o.Extensions = map[string]any{"x-speakeasy-jsonpath": "rfc9535"}
+	o.JSONPathVersion = "rfc9535"
 	err, warnings = o.ApplyToStrict(nodeNew)
 	require.ErrorContains(t, err, "unexpected token") // should error out: invalid nodepath
 	// now lets fix it.

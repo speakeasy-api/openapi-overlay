@@ -18,10 +18,8 @@ func Compare(title string, y1 *yaml.Node, y2 yaml.Node) (*Overlay, error) {
 	}
 
 	return &Overlay{
-		Version: "1.0.0",
-		Extensions: map[string]any{
-			"x-speakeasy-jsonpath": "rfc9535",
-		},
+		Version:         "1.0.0",
+		JSONPathVersion: "rfc9535",
 		Info: Info{
 			Title:   title,
 			Version: "0.0.0",

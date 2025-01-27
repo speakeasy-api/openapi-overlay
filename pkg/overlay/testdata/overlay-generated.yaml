@@ -1,4 +1,5 @@
 overlay: 1.0.0
+x-speakeasy-jsonpath: rfc9535
 info:
   title: Drinks Overlay
   version: 0.0.0
@@ -40,4 +41,3 @@ actions:
   - target: $["paths"]["/drink/{name}"]["get"]["responses"]["200"]
     update:
       x-response-extension: foo
-x-speakeasy-jsonpath: rfc9535

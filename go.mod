@@ -3,7 +3,7 @@ module github.com/speakeasy-api/openapi-overlay
 go 1.22
 
 require (
-	github.com/speakeasy-api/jsonpath v0.5.0
+	github.com/speakeasy-api/jsonpath v0.6.0
 	github.com/spf13/cobra v1.7.0
 	github.com/stretchr/testify v1.9.0
 	github.com/vmware-labs/yaml-jsonpath v0.3.2
