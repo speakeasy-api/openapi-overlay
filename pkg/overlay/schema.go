@@ -2,6 +2,10 @@ package overlay
 
 import (
 	"bytes"
+	"fmt"
+	"github.com/speakeasy-api/jsonpath/pkg/jsonpath"
+	"github.com/speakeasy-api/jsonpath/pkg/jsonpath/config"
+	"github.com/vmware-labs/yaml-jsonpath/pkg/yamlpath"
 	"gopkg.in/yaml.v3"
 )
 
@@ -13,8 +17,9 @@ type Extensions map[string]any
 type Overlay struct {
 	Extensions `yaml:"-,inline"`
 
-	// Version is the version of the overlay configuration. As the RFC was never
-	// really ratifies, this value does not mean much.
+	// Version is the version of the overlay configuration.
+	// This should be set to `1.0.1` for compatability with RFC9535 (JSONPath)
+	// If set to 1.0.0, the overlay will be evaluated using vmware-yamlpath behaviour.
 	Version string `yaml:"overlay"`
 
 	// Info describes the metadata for the overlay.
@@ -33,6 +38,40 @@ func (o *Overlay) ToString() (string, error) {
 	decoder.SetIndent(2)
 	err := decoder.Encode(o)
 	return buf.String(), err
+}
+
+type Queryable interface {
+	Query(root *yaml.Node) []*yaml.Node
+}
+
+type yamlPathQueryable struct {
+	path *yamlpath.Path
+}
+
+func (y yamlPathQueryable) Query(root *yaml.Node) []*yaml.Node {
+	if y.path == nil {
+		return []*yaml.Node{}
+	}
+	// errors aren't actually possible from yamlpath.
+	result, _ := y.path.Find(root)
+	return result
+}
+
+func (o *Overlay) NewPath(target string, warnings *[]string) (Queryable, error) {
+	rfcJSONPath, rfcJSONPathErr := jsonpath.NewPath(target, config.WithPropertyNameExtension())
+	if o.Extensions != nil && o.Extensions["x-speakeasy-jsonpath"] == "rfc9535" {
+		return rfcJSONPath, rfcJSONPathErr
+	}
+	if rfcJSONPathErr != nil && warnings != nil {
+		*warnings = append(*warnings, fmt.Sprintf("invalid rfc9535 jsonpath %s: %s\nThis will be treated as an error in the future. Please fix and opt into the new implementation with `\"x-speakeasy-jsonpath\": rfc9535` in the root of your overlay. See overlay.speakeasy.com for an implementation playground." , target, rfcJSONPathErr.Error()))
+	}
+
+	path, err := yamlpath.NewPath(target)
+	return mustExecute(path), err
+}
+
+func mustExecute(path *yamlpath.Path) yamlPathQueryable {
+	return yamlPathQueryable{path}
 }
 
 // Info describes the metadata for the overlay.

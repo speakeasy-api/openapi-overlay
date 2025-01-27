@@ -2,6 +2,7 @@ package overlay_test
 
 import (
 	"bytes"
+	"github.com/speakeasy-api/jsonpath/pkg/jsonpath"
 	"github.com/speakeasy-api/openapi-overlay/pkg/loader"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -74,4 +75,43 @@ func TestApplyToStrict(t *testing.T) {
 	assert.Len(t, warnings, 1)
 	assert.Equal(t, "update action (2 / 2) target=$.info.title: does nothing", warnings[0])
 	NodeMatchesFile(t, node, "testdata/openapi-strict-onechange.yaml")
+}
+
+func TestApplyToOld(t *testing.T) {
+	t.Parallel()
+
+	nodeOld, err := loader.LoadSpecification("testdata/openapi.yaml")
+	require.NoError(t, err)
+
+	nodeNew, err := loader.LoadSpecification("testdata/openapi.yaml")
+	require.NoError(t, err)
+
+	o, err := loader.LoadOverlay("testdata/overlay-old.yaml")
+	require.NoError(t, err)
+
+	err, warnings := o.ApplyToStrict(nodeOld)
+	require.NoError(t, err)
+	require.Len(t, warnings, 2)
+	require.Contains(t, warnings[0], "x-speakeasy-jsonpath: rfc9535")
+	require.Contains(t, warnings[1], "invalid rfc9535 jsonpath")
+
+	path, err := jsonpath.NewPath(`$.paths["/anything/selectGlobalServer"]`)
+	require.NoError(t, err)
+	result := path.Query(nodeOld)
+	require.NoError(t, err)
+	require.Equal(t, 0, len(result))
+	o.Extensions = map[string]any{"x-speakeasy-jsonpath": "rfc9535"}
+	err, warnings = o.ApplyToStrict(nodeNew)
+	require.ErrorContains(t, err, "unexpected token") // should error out: invalid nodepath
+	// now lets fix it.
+	o.Actions[0].Target = "$.paths.*[?(@[\"x-my-ignore\"])]"
+	err, warnings = o.ApplyToStrict(nodeNew)
+	require.ErrorContains(t, err, "did not match any targets")
+	// Now lets fix it.
+	o.Actions[0].Target = "$.paths[?(@[\"x-my-ignore\"])]" // @ should always refer to the child node in RFC 9535..
+	err, warnings = o.ApplyToStrict(nodeNew)
+	require.NoError(t, err)
+	result = path.Query(nodeNew)
+	require.NoError(t, err)
+	require.Equal(t, 0, len(result))
 }

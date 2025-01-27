@@ -47,4 +47,5 @@ actions:
         to validate that we handle indentation properly
 
         With a second paragraph
+x-speakeasy-jsonpath: rfc9535
 x-top-level-extension: true

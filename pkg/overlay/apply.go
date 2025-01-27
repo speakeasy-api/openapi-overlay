@@ -2,8 +2,6 @@ package overlay
 
 import (
 	"fmt"
-	"github.com/speakeasy-api/jsonpath/pkg/jsonpath"
-	"github.com/speakeasy-api/jsonpath/pkg/jsonpath/config"
 	"gopkg.in/yaml.v3"
 	"strings"
 )
@@ -14,9 +12,9 @@ func (o *Overlay) ApplyTo(root *yaml.Node) error {
 	for _, action := range o.Actions {
 		var err error
 		if action.Remove {
-			err = applyRemoveAction(root, action)
+			err = o.applyRemoveAction(root, action, nil)
 		} else {
-			err = applyUpdateAction(root, action, &[]string{})
+			err = o.applyUpdateAction(root, action, &[]string{})
 		}
 
 		if err != nil {
@@ -30,33 +28,38 @@ func (o *Overlay) ApplyTo(root *yaml.Node) error {
 func (o *Overlay) ApplyToStrict(root *yaml.Node) (error, []string) {
 	multiError := []string{}
 	warnings := []string{}
+	if o.Extensions == nil || o.Extensions["x-speakeasy-jsonpath"] != "rfc9535" {
+		warnings = append(warnings, "overlay lacks `x-speakeasy-jsonpath: rfc9535` extension")
+	}
+
 	for i, action := range o.Actions {
-		err := validateSelectorHasAtLeastOneTarget(root, action)
+		actionWarnings := []string{}
+		err := o.validateSelectorHasAtLeastOneTarget(root, action)
 		if err != nil {
 			multiError = append(multiError, err.Error())
 		}
 		if action.Remove {
-			err = applyRemoveAction(root, action)
+			err = o.applyRemoveAction(root, action, &actionWarnings)
 		} else {
-			actionWarnings := []string{}
-			err = applyUpdateAction(root, action, &actionWarnings)
-			for _, warning := range actionWarnings {
-				warnings = append(warnings, fmt.Sprintf("update action (%v / %v) target=%s: %s", i+1, len(o.Actions), action.Target, warning))
-			}
+			err = o.applyUpdateAction(root, action, &actionWarnings)
+		}
+		for _, warning := range actionWarnings {
+			warnings = append(warnings, fmt.Sprintf("update action (%v / %v) target=%s: %s", i+1, len(o.Actions), action.Target, warning))
 		}
 	}
+
 	if len(multiError) > 0 {
 		return fmt.Errorf("error applying overlay (strict): %v", strings.Join(multiError, ",")), warnings
 	}
 	return nil, warnings
 }
 
-func validateSelectorHasAtLeastOneTarget(root *yaml.Node, action Action) error {
+func (o *Overlay) validateSelectorHasAtLeastOneTarget(root *yaml.Node, action Action) error {
 	if action.Target == "" {
 		return nil
 	}
 
-	p, err := jsonpath.NewPath(action.Target)
+	p, err := o.NewPath(action.Target, nil)
 	if err != nil {
 		return err
 	}
@@ -70,14 +73,14 @@ func validateSelectorHasAtLeastOneTarget(root *yaml.Node, action Action) error {
 	return nil
 }
 
-func applyRemoveAction(root *yaml.Node, action Action) error {
+func (o *Overlay) applyRemoveAction(root *yaml.Node, action Action, warnings *[]string) error {
 	if action.Target == "" {
 		return nil
 	}
 
 	idx := newParentIndex(root)
 
-	p, err := jsonpath.NewPath(action.Target, config.WithPropertyNameExtension())
+	p, err := o.NewPath(action.Target, warnings)
 	if err != nil {
 		return err
 	}
@@ -115,7 +118,7 @@ func removeNode(idx parentIndex, node *yaml.Node) {
 	}
 }
 
-func applyUpdateAction(root *yaml.Node, action Action, warnings *[]string) error {
+func (o *Overlay) applyUpdateAction(root *yaml.Node, action Action, warnings *[]string) error {
 	if action.Target == "" {
 		return nil
 	}
@@ -124,7 +127,7 @@ func applyUpdateAction(root *yaml.Node, action Action, warnings *[]string) error
 		return nil
 	}
 
-	p, err := jsonpath.NewPath(action.Target, config.WithPropertyNameExtension())
+	p, err := o.NewPath(action.Target, warnings)
 	if err != nil {
 		return err
 	}

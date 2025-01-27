@@ -40,3 +40,4 @@ actions:
   - target: $["paths"]["/drink/{name}"]["get"]["responses"]["200"]
     update:
       x-response-extension: foo
+x-speakeasy-jsonpath: rfc9535
