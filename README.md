@@ -40,7 +40,7 @@ go install github.com/speakeasy-api/openapi-overlay@latest
 
 # Usage
 
-The tool provides sub-commands such as `apply`, `validate` and `compare` under the `openapi-overlay` command for working with overlay files. The reccomended usage pattern is through Speakeasy CLI command `speakeasy overlay`. Please see [here](https://www.speakeasyapi.dev/docs/speakeasy-cli/overlay/README) for CLI installation and usage documentation. 
+The tool provides sub-commands such as `apply`, `validate` and `compare` under the `openapi-overlay` command for working with overlay files. The recommended usage pattern is through Speakeasy CLI command `speakeasy overlay`. Please see [here](https://www.speakeasyapi.dev/docs/speakeasy-cli/overlay/README) for CLI installation and usage documentation.
 
 For more examples of usage, see [here](https://www.speakeasyapi.dev/docs/openapi/overlays)
 
