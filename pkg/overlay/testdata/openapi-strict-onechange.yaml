@@ -72,6 +72,7 @@ paths:
       security: []
       tags:
         - authentication
+        - dont-add-x-drop-false
       requestBody:
         required: true
         content:
