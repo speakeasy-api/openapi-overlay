@@ -5,7 +5,6 @@ import (
 	"github.com/speakeasy-api/openapi-overlay/pkg/overlay"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"os"
 	"testing"
 )
 
@@ -29,7 +28,7 @@ func TestCompare(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Uncomment this if we've improved the output
-	os.WriteFile("testdata/overlay-generated.yaml", []byte(o2s), 0644)
+	//os.WriteFile("testdata/overlay-generated.yaml", []byte(o2s), 0644)
 	assert.Equal(t, o1s, o2s)
 
 	// round trip it
