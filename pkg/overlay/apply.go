@@ -148,50 +148,43 @@ func (o *Overlay) applyUpdateAction(root *yaml.Node, action Action, warnings *[]
 	}
 
 	nodes := p.Query(root)
-	prior, err := yaml.Marshal(root)
-	if err != nil {
-		return err
-	}
 
+	didMakeChange := false
 	for _, node := range nodes {
-		if err := updateNode(node, &action.Update); err != nil {
-			return err
-		}
+		didMakeChange = updateNode(node, &action.Update) || didMakeChange
 	}
-	post, err := yaml.Marshal(root)
-	if err != nil {
-		return err
-	}
-	if warnings != nil && string(prior) == string(post) {
+	if !didMakeChange {
 		*warnings = append(*warnings, "does nothing")
 	}
 
 	return nil
 }
 
-func updateNode(node *yaml.Node, updateNode *yaml.Node) error {
-	mergeNode(node, updateNode)
-	return nil
+func updateNode(node *yaml.Node, updateNode *yaml.Node) bool {
+	return mergeNode(node, updateNode)
 }
 
-func mergeNode(node *yaml.Node, merge *yaml.Node) {
+func mergeNode(node *yaml.Node, merge *yaml.Node) bool {
 	if node.Kind != merge.Kind {
 		*node = *clone(merge)
-		return
+		return true
 	}
 	switch node.Kind {
 	default:
+		isChanged := node.Value != merge.Value
 		node.Value = merge.Value
+		return isChanged
 	case yaml.MappingNode:
-		mergeMappingNode(node, merge)
+		return mergeMappingNode(node, merge)
 	case yaml.SequenceNode:
-		mergeSequenceNode(node, merge)
+		return mergeSequenceNode(node, merge)
 	}
 }
 
 // mergeMappingNode will perform a shallow merge of the merge node into the main
 // node.
-func mergeMappingNode(node *yaml.Node, merge *yaml.Node) {
+func mergeMappingNode(node *yaml.Node, merge *yaml.Node) bool {
+	anyChange := false
 NextKey:
 	for i := 0; i < len(merge.Content); i += 2 {
 		mergeKey := merge.Content[i].Value
@@ -200,18 +193,21 @@ NextKey:
 		for j := 0; j < len(node.Content); j += 2 {
 			nodeKey := node.Content[j].Value
 			if nodeKey == mergeKey {
-				mergeNode(node.Content[j+1], mergeValue)
+				anyChange = mergeNode(node.Content[j+1], mergeValue) || anyChange
 				continue NextKey
 			}
 		}
 
 		node.Content = append(node.Content, merge.Content[i], clone(mergeValue))
+		anyChange = true
 	}
+	return anyChange
 }
 
 // mergeSequenceNode will append the merge node's content to the original node.
-func mergeSequenceNode(node *yaml.Node, merge *yaml.Node) {
+func mergeSequenceNode(node *yaml.Node, merge *yaml.Node) bool {
 	node.Content = append(node.Content, clone(merge).Content...)
+	return true
 }
 
 func clone(node *yaml.Node) *yaml.Node {
