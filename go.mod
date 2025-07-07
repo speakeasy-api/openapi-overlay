@@ -1,6 +1,6 @@
 module github.com/speakeasy-api/openapi-overlay
 
-go 1.22
+go 1.24
 
 require (
 	github.com/speakeasy-api/jsonpath v0.6.0
