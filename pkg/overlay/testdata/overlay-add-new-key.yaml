@@ -1,0 +1,10 @@
+overlay: 1.0.0
+info:
+  title: Test Overlay - Add New Key
+  version: 1.0.0
+actions:
+  - target: $.paths['/test'].post.requestBody.content['application/json']
+    description: Add application/json content type
+    update:
+      schema:
+        type: string

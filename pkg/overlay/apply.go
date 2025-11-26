@@ -153,11 +153,158 @@ func (o *Overlay) applyUpdateAction(root *yaml.Node, action Action, warnings *[]
 	for _, node := range nodes {
 		didMakeChange = updateNode(node, &action.Update) || didMakeChange
 	}
+
+	// If no nodes were found, try to add the key to the parent if it exists
+	if !didMakeChange && len(nodes) == 0 {
+		didMakeChange = o.tryAddKeyToParent(root, action.Target, &action.Update, warnings)
+	}
+
 	if !didMakeChange {
 		*warnings = append(*warnings, "does nothing")
 	}
 
 	return nil
+}
+
+// tryAddKeyToParent attempts to add a new key to a parent mapping node when the
+// target path doesn't exist. It parses the JSONPath to extract the parent path
+// and the new key, then adds the key/value pair to the parent if it exists.
+// Returns true if a change was made.
+func (o *Overlay) tryAddKeyToParent(root *yaml.Node, target string, updateNode *yaml.Node, warnings *[]string) bool {
+	// Tokenize the path to extract parent and key
+	tokens := token.NewTokenizer(target, config.WithPropertyNameExtension()).Tokenize()
+	if len(tokens) < 2 {
+		return false
+	}
+
+	// Find the last meaningful token (property name or string literal in brackets)
+	// We need to skip the closing bracket if present
+	var propertyName string
+	var parentTokens token.Tokens
+
+	// Check if we have a bracket notation property at the end: ['key']
+	if len(tokens) >= 3 {
+		lastIdx := len(tokens) - 1
+		if tokens[lastIdx].Token.String() == "]" &&
+			tokens[lastIdx-1].Token.String() == "STRING_LITERAL" {
+			// Bracket notation: ...['property']
+			propertyName = tokens[lastIdx-1].Literal
+			// Parent path excludes the bracket open, literal, and bracket close
+			parentTokens = tokens[:lastIdx-2]
+		}
+	}
+
+	// If not bracket notation, check for dot notation: .property
+	if propertyName == "" && len(tokens) >= 2 {
+		lastIdx := len(tokens) - 1
+		if tokens[lastIdx].Token.String() == "STRING" {
+			// Dot notation: ...property
+			propertyName = tokens[lastIdx].Literal
+			// Parent path excludes the dot and property
+			if lastIdx > 0 && tokens[lastIdx-1].Token.String() == "." {
+				parentTokens = tokens[:lastIdx-1]
+			} else {
+				parentTokens = tokens[:lastIdx]
+			}
+		}
+	}
+
+	if propertyName == "" || len(parentTokens) == 0 {
+		// Couldn't extract a simple property access
+		return false
+	}
+
+	// Build the parent path by reconstructing from tokens
+	parentPath := buildParentPath(parentTokens)
+	if parentPath == "" {
+		return false
+	}
+
+	// Query for the parent node
+	parentQueryable, err := o.NewPath(parentPath, warnings)
+	if err != nil {
+		return false
+	}
+
+	parentNodes := parentQueryable.Query(root)
+	if len(parentNodes) == 0 {
+		// Parent doesn't exist, can't add the key
+		return false
+	}
+
+	// Add the key to all matching parent nodes (usually just one)
+	didMakeChange := false
+	for _, parentNode := range parentNodes {
+		if parentNode.Kind != yaml.MappingNode {
+			// Can only add keys to mapping nodes
+			continue
+		}
+
+		// Check if the key already exists
+		keyExists := false
+		for i := 0; i < len(parentNode.Content); i += 2 {
+			if parentNode.Content[i].Value == propertyName {
+				keyExists = true
+				break
+			}
+		}
+
+		if !keyExists {
+			// Add the new key/value pair
+			keyNode := &yaml.Node{
+				Kind:  yaml.ScalarNode,
+				Value: propertyName,
+			}
+			parentNode.Content = append(parentNode.Content, keyNode, clone(updateNode))
+			didMakeChange = true
+		}
+	}
+
+	return didMakeChange
+}
+
+// buildParentPath reconstructs a JSONPath string from tokens
+func buildParentPath(tokens token.Tokens) string {
+	if len(tokens) == 0 {
+		return ""
+	}
+
+	var result strings.Builder
+	for _, tok := range tokens {
+		tokStr := tok.Token.String()
+		switch tokStr {
+		case "$":
+			result.WriteString("$")
+		case ".":
+			result.WriteString(".")
+		case "STRING":
+			result.WriteString(tok.Literal)
+		case "[":
+			result.WriteString("[")
+		case "]":
+			result.WriteString("]")
+		case "STRING_LITERAL":
+			// For bracket notation properties, we need to include the quotes
+			result.WriteString("'")
+			result.WriteString(tok.Literal)
+			result.WriteString("'")
+		case ",":
+			result.WriteString(",")
+		case "..":
+			result.WriteString("..")
+		case "*":
+			result.WriteString("*")
+		case "NUMBER":
+			result.WriteString(tok.Literal)
+		default:
+			// For other tokens, try to preserve the original using Literal
+			if tok.Literal != "" {
+				result.WriteString(tok.Literal)
+			}
+		}
+	}
+
+	return result.String()
 }
 
 func updateNode(node *yaml.Node, updateNode *yaml.Node) bool {

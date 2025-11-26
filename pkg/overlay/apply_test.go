@@ -67,7 +67,9 @@ func TestApplyToStrict(t *testing.T) {
 
 	err, warnings := o.ApplyToStrict(node)
 	assert.Error(t, err, "error applying overlay (strict): selector \"$.unknown-attribute\" did not match any targets")
-	assert.Len(t, warnings, 2)
+	// Note: With the fix for issue #1, the first action now successfully adds "unknown-attribute" to the root,
+	// so it no longer produces a "does nothing" warning. Only the third action produces a warning now.
+	assert.Len(t, warnings, 1)
 	o.Actions = o.Actions[1:]
 	node, err = loader.LoadSpecification("testdata/openapi.yaml")
 	require.NoError(t, err)
@@ -305,4 +307,189 @@ func TestApplyToOld(t *testing.T) {
 	result = path.Query(nodeNew)
 	require.NoError(t, err)
 	require.Equal(t, 0, len(result))
+}
+
+// TestApplyAddNewKey tests that update actions can add new keys to existing mapping nodes
+// Regression test for: https://github.com/speakeasy-api/openapi-overlay/issues/1
+func TestApplyAddNewKey(t *testing.T) {
+	t.Parallel()
+
+	t.Run("add new key with bracket notation", func(t *testing.T) {
+		node, err := loader.LoadSpecification("testdata/spec-add-new-key.yaml")
+		require.NoError(t, err)
+
+		o, err := loader.LoadOverlay("testdata/overlay-add-new-key.yaml")
+		require.NoError(t, err)
+
+		err = o.ApplyTo(node)
+		assert.NoError(t, err)
+
+		NodeMatchesFile(t, node, "testdata/spec-add-new-key-expected.yaml")
+	})
+
+	t.Run("verify key was actually added", func(t *testing.T) {
+		node, err := loader.LoadSpecification("testdata/spec-add-new-key.yaml")
+		require.NoError(t, err)
+
+		o, err := loader.LoadOverlay("testdata/overlay-add-new-key.yaml")
+		require.NoError(t, err)
+
+		err = o.ApplyTo(node)
+		require.NoError(t, err)
+
+		// Verify the new key exists
+		path, err := jsonpath.NewPath(`$.paths['/test'].post.requestBody.content['application/json']`)
+		require.NoError(t, err)
+		result := path.Query(node)
+		require.Equal(t, 1, len(result), "application/json key should exist")
+		require.Equal(t, yaml.MappingNode, result[0].Kind)
+
+		// Verify the original key still exists
+		path, err = jsonpath.NewPath(`$.paths['/test'].post.requestBody.content['*/*']`)
+		require.NoError(t, err)
+		result = path.Query(node)
+		require.Equal(t, 1, len(result), "*/* key should still exist")
+	})
+
+	t.Run("add new key to top-level object", func(t *testing.T) {
+		// Create a simple spec
+		var spec yaml.Node
+		err := yaml.Unmarshal([]byte(`openapi: 3.0.0
+info:
+  title: Test
+  version: 1.0.0`), &spec)
+		require.NoError(t, err)
+
+		// Create overlay to add a new top-level key
+		var o overlay.Overlay
+		err = yaml.Unmarshal([]byte(`overlay: 1.0.0
+info:
+  title: Add servers
+  version: 1.0.0
+actions:
+  - target: $.servers
+    update:
+      - url: https://api.example.com`), &o)
+		require.NoError(t, err)
+
+		err = o.ApplyTo(&spec)
+		require.NoError(t, err)
+
+		// Verify the new key was added
+		path, err := jsonpath.NewPath(`$.servers`)
+		require.NoError(t, err)
+		result := path.Query(&spec)
+		require.Equal(t, 1, len(result), "servers key should be added")
+	})
+
+	t.Run("does not add key when parent doesn't exist", func(t *testing.T) {
+		var spec yaml.Node
+		err := yaml.Unmarshal([]byte(`openapi: 3.0.0
+info:
+  title: Test
+  version: 1.0.0`), &spec)
+		require.NoError(t, err)
+
+		// Try to add a key to a non-existent parent
+		var o overlay.Overlay
+		err = yaml.Unmarshal([]byte(`overlay: 1.0.0
+info:
+  title: Test
+  version: 1.0.0
+actions:
+  - target: $.paths['/test'].post.summary
+    update: "A test endpoint"`), &o)
+		require.NoError(t, err)
+
+		err = o.ApplyTo(&spec)
+		require.NoError(t, err)
+
+		// Verify the key was not added (because parent doesn't exist)
+		path, err := jsonpath.NewPath(`$.paths['/test']`)
+		require.NoError(t, err)
+		result := path.Query(&spec)
+		require.Equal(t, 0, len(result), "should not create missing parent path")
+	})
+
+	t.Run("add multiple new keys", func(t *testing.T) {
+		var spec yaml.Node
+		err := yaml.Unmarshal([]byte(`openapi: 3.0.0
+info:
+  title: Test
+  version: 1.0.0
+paths:
+  /test:
+    get:
+      responses:
+        '200':
+          description: OK`), &spec)
+		require.NoError(t, err)
+
+		// Add multiple new response codes
+		var o overlay.Overlay
+		err = yaml.Unmarshal([]byte(`overlay: 1.0.0
+info:
+  title: Add responses
+  version: 1.0.0
+actions:
+  - target: $.paths['/test'].get.responses['400']
+    update:
+      description: Bad Request
+  - target: $.paths['/test'].get.responses['404']
+    update:
+      description: Not Found`), &o)
+		require.NoError(t, err)
+
+		err = o.ApplyTo(&spec)
+		require.NoError(t, err)
+
+		// Verify all response codes exist
+		path200, _ := jsonpath.NewPath(`$.paths['/test'].get.responses['200']`)
+		path400, _ := jsonpath.NewPath(`$.paths['/test'].get.responses['400']`)
+		path404, _ := jsonpath.NewPath(`$.paths['/test'].get.responses['404']`)
+
+		require.Equal(t, 1, len(path200.Query(&spec)))
+		require.Equal(t, 1, len(path400.Query(&spec)))
+		require.Equal(t, 1, len(path404.Query(&spec)))
+	})
+
+	t.Run("does not duplicate existing keys", func(t *testing.T) {
+		node, err := loader.LoadSpecification("testdata/spec-add-new-key.yaml")
+		require.NoError(t, err)
+
+		// Try to add a key that already exists
+		var o overlay.Overlay
+		err = yaml.Unmarshal([]byte(`overlay: 1.0.0
+info:
+  title: Test
+  version: 1.0.0
+actions:
+  - target: $.paths['/test'].post.requestBody.content['*/*']
+    update:
+      schema:
+        type: object`), &o)
+		require.NoError(t, err)
+
+		err = o.ApplyTo(node)
+		require.NoError(t, err)
+
+		// Count how many times '*/*' appears
+		path, err := jsonpath.NewPath(`$.paths['/test'].post.requestBody.content`)
+		require.NoError(t, err)
+		result := path.Query(node)
+		require.Equal(t, 1, len(result))
+
+		// The content node should still be a mapping with just one '*/*' key
+		contentNode := result[0]
+		require.Equal(t, yaml.MappingNode, contentNode.Kind)
+
+		// Count keys (every 2 elements = 1 key/value pair)
+		wildcardCount := 0
+		for i := 0; i < len(contentNode.Content); i += 2 {
+			if contentNode.Content[i].Value == "*/*" {
+				wildcardCount++
+			}
+		}
+		require.Equal(t, 1, wildcardCount, "should not duplicate existing key")
+	})
 }
