@@ -1,3 +1,15 @@
+> [!IMPORTANT]
+> **This repository is now archived.**
+>
+> The OpenAPI Overlay code has been moved to https://github.com/speakeasy-api/openapi/tree/main/overlay
+>
+> **Please update your dependencies:**
+> - Update any references from `github.com/speakeasy-api/openapi-overlay` to `github.com/speakeasy-api/openapi/overlay`
+> - Direct all issues, pull requests, and discussions to the [new repository](https://github.com/speakeasy-api/openapi)
+> - See the [new repository](https://github.com/speakeasy-api/openapi) for the latest updates and documentation
+
+---
+
 [![made-with-Go](https://img.shields.io/badge/Made%20with-Go-1f425f.svg)](https://go.dev/)
 [![Go Report Card](https://goreportcard.com/badge/github.com/speakeasy-api/openapi-overlay)](https://goreportcard.com/report/github.com/speakeasy-api/openapi-overlay)
 [![GoDoc](https://godoc.org/github.com/speakeasy-api/openapi-overlay?status.svg)](https://godoc.org/github.com/speakeasy-api/openapi-overlay)
