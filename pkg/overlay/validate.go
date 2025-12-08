@@ -55,9 +55,7 @@ func (o *Overlay) Validate() error {
 				errs = append(errs, fmt.Errorf("overlay action at index %d should not both set remove and define update", i))
 			}
 
-			// Validate copy field version requirement
-			// Note: Per spec, copy has no impact if remove is true or update contains a value
-			// (copy is simply ignored, not an error)
+			// NOTE: copy has no impact if remove is true or update contains a value
 			if action.Copy != "" {
 				if o.Version == "1.0.0" {
 					errs = append(errs, fmt.Errorf("overlay action at index %d: copy action requires overlay version 1.1.0", i))

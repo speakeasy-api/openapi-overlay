@@ -12,7 +12,7 @@ import (
 // ApplyTo will take an overlay and apply its changes to the given YAML
 // document.
 func (o *Overlay) ApplyTo(root *yaml.Node) error {
-	// Per spec, priority is: remove > update > copy
+	// Priority is: remove > update > copy
 	// Copy has no impact if remove is true or update contains a value
 	for _, action := range o.Actions {
 		var err error
@@ -38,7 +38,7 @@ func (o *Overlay) ApplyToStrict(root *yaml.Node) ([]string, error) {
 	warnings := []string{}
 	hasFilterExpression := false
 
-	// Per spec, priority is: remove > update > copy
+	// Priority is: remove > update > copy
 	// Copy has no impact if remove is true or update contains a value
 	for i, action := range o.Actions {
 		tokens := token.NewTokenizer(action.Target, config.WithPropertyNameExtension()).Tokenize()
@@ -55,7 +55,7 @@ func (o *Overlay) ApplyToStrict(root *yaml.Node) ([]string, error) {
 		}
 
 		// Determine action type based on priority: remove > update > copy
-		actionType := "update"
+		actionType := "unknown"
 		switch {
 		case action.Remove:
 			actionType = "remove"
@@ -66,6 +66,8 @@ func (o *Overlay) ApplyToStrict(root *yaml.Node) ([]string, error) {
 		case action.Copy != "":
 			actionType = "copy"
 			err = o.applyCopyAction(root, action, &actionWarnings)
+		default:
+			err = fmt.Errorf("unknown action type: %v", action)
 		}
 		if err != nil {
 			return nil, err
@@ -102,7 +104,7 @@ func (o *Overlay) validateSelectorHasAtLeastOneTarget(root *yaml.Node, action Ac
 	}
 
 	// For copy actions, validate the source path (only if copy will actually be applied)
-	// Per spec, copy has no impact if remove is true or update contains a value
+	// Copy has no impact if remove is true or update contains a value
 	if action.Copy != "" && !action.Remove && action.Update.IsZero() {
 		sourcePath, err := o.NewPath(action.Copy, nil)
 		if err != nil {
