@@ -2,21 +2,27 @@ package overlay
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/speakeasy-api/jsonpath/pkg/jsonpath/config"
 	"github.com/speakeasy-api/jsonpath/pkg/jsonpath/token"
 	"gopkg.in/yaml.v3"
-	"strings"
 )
 
 // ApplyTo will take an overlay and apply its changes to the given YAML
 // document.
 func (o *Overlay) ApplyTo(root *yaml.Node) error {
+	// Priority is: remove > update > copy
+	// Copy has no impact if remove is true or update contains a value
 	for _, action := range o.Actions {
 		var err error
-		if action.Remove {
+		switch {
+		case action.Remove:
 			err = o.applyRemoveAction(root, action, nil)
-		} else {
+		case !action.Update.IsZero():
 			err = o.applyUpdateAction(root, action, &[]string{})
+		case action.Copy != "":
+			err = o.applyCopyAction(root, action, &[]string{})
 		}
 
 		if err != nil {
@@ -27,10 +33,13 @@ func (o *Overlay) ApplyTo(root *yaml.Node) error {
 	return nil
 }
 
-func (o *Overlay) ApplyToStrict(root *yaml.Node) (error, []string) {
+func (o *Overlay) ApplyToStrict(root *yaml.Node) ([]string, error) {
 	multiError := []string{}
 	warnings := []string{}
 	hasFilterExpression := false
+
+	// Priority is: remove > update > copy
+	// Copy has no impact if remove is true or update contains a value
 	for i, action := range o.Actions {
 		tokens := token.NewTokenizer(action.Target, config.WithPropertyNameExtension()).Tokenize()
 		for _, tok := range tokens {
@@ -44,13 +53,27 @@ func (o *Overlay) ApplyToStrict(root *yaml.Node) (error, []string) {
 		if err != nil {
 			multiError = append(multiError, err.Error())
 		}
-		if action.Remove {
+
+		// Determine action type based on priority: remove > update > copy
+		actionType := "unknown"
+		switch {
+		case action.Remove:
+			actionType = "remove"
 			err = o.applyRemoveAction(root, action, &actionWarnings)
-		} else {
+		case !action.Update.IsZero():
+			actionType = "update"
 			err = o.applyUpdateAction(root, action, &actionWarnings)
+		case action.Copy != "":
+			actionType = "copy"
+			err = o.applyCopyAction(root, action, &actionWarnings)
+		default:
+			err = fmt.Errorf("unknown action type: %v", action)
+		}
+		if err != nil {
+			return nil, err
 		}
 		for _, warning := range actionWarnings {
-			warnings = append(warnings, fmt.Sprintf("update action (%v / %v) target=%s: %s", i+1, len(o.Actions), action.Target, warning))
+			warnings = append(warnings, fmt.Sprintf("%s action (%v / %v) target=%s: %s", actionType, i+1, len(o.Actions), action.Target, warning))
 		}
 	}
 
@@ -59,9 +82,9 @@ func (o *Overlay) ApplyToStrict(root *yaml.Node) (error, []string) {
 	}
 
 	if len(multiError) > 0 {
-		return fmt.Errorf("error applying overlay (strict): %v", strings.Join(multiError, ",")), warnings
+		return warnings, fmt.Errorf("error applying overlay (strict): %v", strings.Join(multiError, ","))
 	}
-	return nil, warnings
+	return warnings, nil
 }
 
 func (o *Overlay) validateSelectorHasAtLeastOneTarget(root *yaml.Node, action Action) error {
@@ -80,6 +103,24 @@ func (o *Overlay) validateSelectorHasAtLeastOneTarget(root *yaml.Node, action Ac
 		return fmt.Errorf("selector %q did not match any targets", action.Target)
 	}
 
+	// For copy actions, validate the source path (only if copy will actually be applied)
+	// Copy has no impact if remove is true or update contains a value
+	if action.Copy != "" && !action.Remove && action.Update.IsZero() {
+		sourcePath, err := o.NewPath(action.Copy, nil)
+		if err != nil {
+			return err
+		}
+
+		sourceNodes := sourcePath.Query(root)
+		if len(sourceNodes) == 0 {
+			return fmt.Errorf("copy source selector %q did not match any nodes", action.Copy)
+		}
+
+		if len(sourceNodes) > 1 {
+			return fmt.Errorf("copy source selector %q matched multiple nodes (%d), expected exactly one", action.Copy, len(sourceNodes))
+		}
+	}
+
 	return nil
 }
 
@@ -96,9 +137,6 @@ func (o *Overlay) applyRemoveAction(root *yaml.Node, action Action, warnings *[]
 	}
 
 	nodes := p.Query(root)
-	if err != nil {
-		return err
-	}
 
 	for _, node := range nodes {
 		removeNode(idx, node)
@@ -185,6 +223,13 @@ func mergeNode(node *yaml.Node, merge *yaml.Node) bool {
 // node.
 func mergeMappingNode(node *yaml.Node, merge *yaml.Node) bool {
 	anyChange := false
+
+	// If the target is an empty flow-style mapping and we're merging content,
+	// convert to block style for better readability
+	if len(node.Content) == 0 && node.Style == yaml.FlowStyle && len(merge.Content) > 0 {
+		node.Style = 0 // Reset to default (block) style
+	}
+
 NextKey:
 	for i := 0; i < len(merge.Content); i += 2 {
 		mergeKey := merge.Content[i].Value
@@ -231,4 +276,64 @@ func clone(node *yaml.Node) *yaml.Node {
 		}
 	}
 	return newNode
+}
+
+// applyCopyAction applies a copy action to the document
+// This is a stub implementation for the copy feature from Overlay Specification v1.1.0
+func (o *Overlay) applyCopyAction(root *yaml.Node, action Action, warnings *[]string) error {
+	if action.Target == "" {
+		return nil
+	}
+
+	if action.Copy == "" {
+		return nil
+	}
+
+	// Parse the source path
+	sourcePath, err := o.NewPath(action.Copy, warnings)
+	if err != nil {
+		return fmt.Errorf("invalid copy source path %q: %w", action.Copy, err)
+	}
+
+	// Query the source nodes
+	sourceNodes := sourcePath.Query(root)
+	if len(sourceNodes) == 0 {
+		// Source not found - in non-strict mode this is silently ignored
+		// In strict mode, this will be caught by validateSelectorHasAtLeastOneTarget
+		if warnings != nil {
+			*warnings = append(*warnings, fmt.Sprintf("copy source %q not found", action.Copy))
+		}
+		return nil
+	}
+
+	if len(sourceNodes) > 1 {
+		return fmt.Errorf("copy source path %q matched multiple nodes (%d), expected exactly one", action.Copy, len(sourceNodes))
+	}
+
+	sourceNode := sourceNodes[0]
+
+	// Parse the target path
+	targetPath, err := o.NewPath(action.Target, warnings)
+	if err != nil {
+		return fmt.Errorf("invalid target path %q: %w", action.Target, err)
+	}
+
+	// Query the target nodes
+	targetNodes := targetPath.Query(root)
+
+	// Copy the source node to each target
+	didMakeChange := false
+	for _, targetNode := range targetNodes {
+		// Clone the source node to avoid reference issues
+		copiedNode := clone(sourceNode)
+
+		// Merge the copied node into the target
+		didMakeChange = mergeNode(targetNode, copiedNode) || didMakeChange
+	}
+
+	if !didMakeChange && warnings != nil {
+		*warnings = append(*warnings, "does nothing")
+	}
+
+	return nil
 }

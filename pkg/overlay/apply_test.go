@@ -2,15 +2,16 @@ package overlay_test
 
 import (
 	"bytes"
+	"os"
+	"strconv"
+	"testing"
+
 	"github.com/speakeasy-api/jsonpath/pkg/jsonpath"
 	"github.com/speakeasy-api/openapi-overlay/pkg/loader"
 	"github.com/speakeasy-api/openapi-overlay/pkg/overlay"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
-	"os"
-	"strconv"
-	"testing"
 )
 
 // NodeMatchesFile is a test that marshals the YAML file from the given node,
@@ -65,14 +66,14 @@ func TestApplyToStrict(t *testing.T) {
 	o, err := loader.LoadOverlay("testdata/overlay-mismatched.yaml")
 	require.NoError(t, err)
 
-	err, warnings := o.ApplyToStrict(node)
+	warnings, err := o.ApplyToStrict(node)
 	assert.Error(t, err, "error applying overlay (strict): selector \"$.unknown-attribute\" did not match any targets")
 	assert.Len(t, warnings, 2)
 	o.Actions = o.Actions[1:]
 	node, err = loader.LoadSpecification("testdata/openapi.yaml")
 	require.NoError(t, err)
 
-	err, warnings = o.ApplyToStrict(node)
+	warnings, err = o.ApplyToStrict(node)
 	assert.NoError(t, err)
 	assert.Len(t, warnings, 1)
 	assert.Equal(t, "update action (2 / 2) target=$.info.title: does nothing", warnings[0])
@@ -268,6 +269,21 @@ func cloneNode(node *yaml.Node) *yaml.Node {
 	return clone
 }
 
+func TestApplyTo_CopyVersionToHeader(t *testing.T) {
+	t.Parallel()
+
+	node, err := loader.LoadSpecification("testdata/openapi-version-header.yaml")
+	require.NoError(t, err)
+
+	o, err := loader.LoadOverlay("testdata/overlay-version-header.yaml")
+	require.NoError(t, err)
+
+	err = o.ApplyTo(node)
+	assert.NoError(t, err)
+
+	NodeMatchesFile(t, node, "testdata/openapi-version-header-expected.yaml")
+}
+
 func TestApplyToOld(t *testing.T) {
 	t.Parallel()
 
@@ -280,7 +296,7 @@ func TestApplyToOld(t *testing.T) {
 	o, err := loader.LoadOverlay("testdata/overlay-old.yaml")
 	require.NoError(t, err)
 
-	err, warnings := o.ApplyToStrict(nodeOld)
+	warnings, err := o.ApplyToStrict(nodeOld)
 	require.NoError(t, err)
 	require.Len(t, warnings, 2)
 	require.Contains(t, warnings[0], "invalid rfc9535 jsonpath")
@@ -292,15 +308,15 @@ func TestApplyToOld(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 0, len(result))
 	o.JSONPathVersion = "rfc9535"
-	err, warnings = o.ApplyToStrict(nodeNew)
+	_, err = o.ApplyToStrict(nodeNew)
 	require.ErrorContains(t, err, "unexpected token") // should error out: invalid nodepath
 	// now lets fix it.
 	o.Actions[0].Target = "$.paths.*[?(@[\"x-my-ignore\"])]"
-	err, warnings = o.ApplyToStrict(nodeNew)
+	_, err = o.ApplyToStrict(nodeNew)
 	require.ErrorContains(t, err, "did not match any targets")
 	// Now lets fix it.
 	o.Actions[0].Target = "$.paths[?(@[\"x-my-ignore\"])]" // @ should always refer to the child node in RFC 9535..
-	err, warnings = o.ApplyToStrict(nodeNew)
+	_, err = o.ApplyToStrict(nodeNew)
 	require.NoError(t, err)
 	result = path.Query(nodeNew)
 	require.NoError(t, err)

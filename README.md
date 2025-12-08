@@ -14,7 +14,6 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/speakeasy-api/openapi-overlay)](https://goreportcard.com/report/github.com/speakeasy-api/openapi-overlay)
 [![GoDoc](https://godoc.org/github.com/speakeasy-api/openapi-overlay?status.svg)](https://godoc.org/github.com/speakeasy-api/openapi-overlay)
 
-
 # OpenAPI Overlay
 
 <a href="https://speakeasy.com/openapi/overlays"><img src="https://custom-icon-badges.demolab.com/badge/-Overlay%20Reference-212015?style=for-the-badge&logoColor=FBE331&logo=speakeasy&labelColor=545454" /></a>
@@ -27,7 +26,9 @@ Specification](https://github.com/OAI/Overlay-Specification/blob/3f398c6/version
 (2023-10-12). This specification defines a means of editing a OpenAPI
 Specification file by applying a list of actions. Each action is either a remove
 action that prunes nodes or an update that merges a value into nodes. The nodes
-impacted are selected by a target expression which uses JSONPath.
+impacted are selected by a target expression which uses JSONPath. This
+implementation also supports [version 1.1.0](https://github.com/OAI/Overlay-Specification/blob/e2c3cec/versions/1.1.0-dev.md)
+which adds a `copy` action for duplicating or moving nodes within the document.
 
 The specification itself says very little about the input file to be modified or
 the output file. The presumed intention is that the input and output be an

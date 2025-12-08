@@ -25,8 +25,8 @@ func (v ValidationErrors) Return() error {
 
 func (o *Overlay) Validate() error {
 	errs := make(ValidationErrors, 0)
-	if o.Version != "1.0.0" {
-		errs = append(errs, fmt.Errorf("overlay version must be 1.0.0"))
+	if o.Version != "1.0.0" && o.Version != "1.1.0" {
+		errs = append(errs, fmt.Errorf("overlay version must be 1.0.0 or 1.1.0"))
 	}
 
 	if o.Info.Title == "" {
@@ -53,6 +53,13 @@ func (o *Overlay) Validate() error {
 
 			if action.Remove && !action.Update.IsZero() {
 				errs = append(errs, fmt.Errorf("overlay action at index %d should not both set remove and define update", i))
+			}
+
+			// NOTE: copy has no impact if remove is true or update contains a value
+			if action.Copy != "" {
+				if o.Version == "1.0.0" {
+					errs = append(errs, fmt.Errorf("overlay action at index %d: copy action requires overlay version 1.1.0", i))
+				}
 			}
 		}
 	}
